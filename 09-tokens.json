@@ -1,0 +1,27 @@
+{
+  "project": "mission-control",
+  "created_at": "2026-02-05T20:33:30.158Z",
+  "updated_at": "2026-02-05T20:33:30.158Z",
+  "total_input_tokens": 11370,
+  "total_output_tokens": 3651,
+  "estimated_cost_usd": 0,
+  "actual_cost_usd": 0.013,
+  "sessions": [
+    {
+      "agent": "architect",
+      "phase": "plan",
+      "timestamp": "2026-02-05T20:33:30.158Z",
+      "input_tokens": 11370,
+      "output_tokens": 3651,
+      "model": "moonshot/kimi-k2.5",
+      "cost_usd": 0.013
+    }
+  ],
+  "by_phase": {
+    "plan": {
+      "input": 11370,
+      "output": 3651,
+      "cost": 0.013
+    }
+  }
+}
