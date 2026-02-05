@@ -30,30 +30,50 @@ export function AgentStatus() {
       .trim();
   };
 
+  // Format activity text for display
+  const formatActivity = (agent) => {
+    if (!agent.currentTask) {
+      return 'idle';
+    }
+    // Extract verb and object from task
+    const task = agent.currentTask;
+    if (task.includes('fix')) return `fixing ${agent.project || 'bugs'}`;
+    if (task.includes('implement')) return `building ${agent.project || 'features'}`;
+    if (task.includes('build')) return `building ${agent.project || ''}`;
+    if (task.includes('test')) return `testing ${agent.project || ''}`;
+    if (task.includes('plan')) return `planning ${agent.project || ''}`;
+    return task;
+  };
+
   return (
     <Panel title="Agents" loading={loading} error={error} className="h-full">
-      <div className="space-y-0.5">
+      <div className="space-y-2">
         {agents.length === 0 && !loading && (
-          <div className="text-mission-muted text-[10px] text-center py-1">
+          <div className="text-mission-muted text-sm text-center py-2">
             No agents
           </div>
         )}
         {agents.map((agent) => (
           <div 
             key={agent.id}
-            className="flex items-center gap-1.5 px-1.5 py-0.5 rounded hover:bg-mission-bg/30"
+            className="flex items-center gap-3 px-2 py-1.5 rounded hover:bg-mission-bg/30"
           >
-            {/* Status Light */}
+            {/* Status Light - larger and fixed */}
             <div className="relative flex-shrink-0">
-              <div className={`w-1.5 h-1.5 rounded-full ${getStatusColor(agent.status)}`} />
+              <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)}`} />
               {agent.status === 'working' && (
-                <div className={`absolute inset-0 w-1.5 h-1.5 rounded-full ${getStatusColor(agent.status)} animate-ping opacity-75`} />
+                <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)} animate-ping opacity-75`} />
               )}
             </div>
             
-            {/* Agent Name - minimal */}
-            <div className="text-[11px] font-medium text-mission-text truncate leading-tight">
+            {/* Agent Name - larger font */}
+            <div className="text-sm font-medium text-mission-text truncate leading-tight min-w-0">
               {formatAgentName(agent.name)}
+            </div>
+            
+            {/* Activity Text - shows what agent is doing */}
+            <div className="text-xs text-mission-muted truncate ml-auto flex-shrink-0">
+              {formatActivity(agent)}
             </div>
           </div>
         ))}

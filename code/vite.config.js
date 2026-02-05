@@ -254,10 +254,10 @@ function workspaceApiMiddleware() {
             
             return {
               name: e.name,
-              inputTokens: tokens.input || 0,
-              outputTokens: tokens.output || 0,
-              estimatedCost: cost.estimated || 0,
-              actualCost: cost.actual || 0
+              inputTokens: tokens.total_input_tokens || tokens.input || 0,
+              outputTokens: tokens.total_output_tokens || tokens.output || 0,
+              estimatedCost: tokens.estimated_cost_usd || cost.estimated || 0,
+              actualCost: tokens.actual_cost_usd || cost.actual || 0
             };
           });
         

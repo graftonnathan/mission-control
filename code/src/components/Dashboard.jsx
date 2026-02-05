@@ -42,15 +42,15 @@ export function Dashboard() {
 
       {/* Main Grid - New Layout */}
       <div className="space-y-4">
-        {/* Top Row: Agent Status (compact) + Agent Reports (large) */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* Agent Status - compact, 1 column */}
-          <div className="lg:col-span-1">
+        {/* Top Row: Agent Status (narrow sidebar) + Agent Reports (fills remaining) */}
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Agent Status - narrow sidebar, fixed width */}
+          <div className="w-full lg:w-48 flex-shrink-0">
             <AgentStatus />
           </div>
           
-          {/* Agent Reports - large, 3 columns */}
-          <div className="lg:col-span-3">
+          {/* Agent Reports - fills remaining space */}
+          <div className="flex-1 min-w-0">
             <AgentReports />
           </div>
         </div>
