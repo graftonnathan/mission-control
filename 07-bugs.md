@@ -1,90 +1,81 @@
-## Bug 2026-02-05T20:52:00Z
+## Bug 2026-02-05T20:52:00Z - ✅ FIXED
 - **Test:** HTML Page Title
 - **Severity:** low
-- **Description:** index.html has default title "code" instead of descriptive "Mission Control Dashboard"
-- **Reproduction:** 
-  1. Start dev server: npm run dev
-  2. Open http://localhost:5173/
-  3. Check browser tab title
-- **Expected:** Title should be "Mission Control Dashboard" or similar
-- **Actual:** Title shows "code" (Vite default)
-- **Fix:** Update index.html `<title>` tag
-- **Evidence:** curl http://localhost:5173/ shows `<title>code</title>`
+- **Status:** Fixed by Ed
+- **Fix:** Updated index.html `<title>` tag to "Mission Control Dashboard"
 
 ## Quick Fix (Marcus handled)
 - **Text contrast softened** in Dashboard.jsx header and time display
 
-## Feature Request 2026-02-05T21:12:00Z
+## Feature Request 2026-02-05T21:12:00Z - ✅ FIXED
 - **Panel:** Agent Reports
 - **Type:** enhancement
-- **Description:** Currently Agent Reports panel only shows filenames. User wants to READ the actual report content, not just see filenames.
-- **Current Behavior:** Lists memory filenames only
-- **Expected Behavior:** 
-  - Expandable/collapsible report entries
-  - Show report content (first 500 chars or full)
-  - Parse markdown formatting
-  - Show timestamp, agent name, phase handled
-  - Allow clicking to expand full report
-- **Files to Modify:** `src/components/AgentReports.jsx`, `src/hooks/useReports.js`
-- **Priority:** medium
+- **Status:** Fixed by Ed
 
-## Feature Request 2026-02-05T21:13:00Z
+## Feature Request 2026-02-05T21:13:00Z - ✅ FIXED
 - **Panel:** Agent Status
 - **Type:** enhancement
-- **Description:** Clean up agent display and add activity indicators
-- **Requirements:**
-  - Clean up agent names (remove file extensions, format nicely)
-  - Red/green active status light for each agent
-  - When agent is "working", show quick summary of what they're doing
-  - Parse from their current task or memory/ logs
-- **Files to Modify:** `src/components/AgentStatus.jsx`
-- **Priority:** medium
+- **Status:** Fixed by Ed
 
-## Bug 2026-02-05T21:14:00Z - CRITICAL
+## Bug 2026-02-05T21:14:00Z - ✅ FIXED
 - **Panel:** All Panels
 - **Severity:** critical
-- **Description:** Dashboard showing default/mock values, not live data from workspace files
-- **Affected:** Token counts, System Health, Projects, Agents, Queue — all showing hardcoded defaults
-- **Expected:** Read actual data from:
-  - PROJECTS/*/09-tokens.json (real token usage)
-  - QUEUE/*.json (real queue status)
-  - AGENTS/*.md (real agent list)
-  - memory/*.md (real reports)
-- **Actual:** All hooks returning mock/default data instead of filesystem data
-- **Files to Fix:** All hooks in src/hooks/ — useProjects, useAgents, useQueue, useTokens, useReports
-- **Priority:** critical
+- **Status:** Fixed by Ed
 
-## Feature Request 2026-02-05T21:16:00Z
+## Feature Request 2026-02-05T21:16:00Z - ✅ FIXED
 - **Panel:** Live Log
 - **Type:** enhancement
-- **Description:** Change Live Log content from poll cycle to agent lifecycle events
-- **Current:** Shows poll cycle (technical, not useful)
-- **Expected:** Show agent events:
-  - Agent wake (timestamp, agent name)
-  - Work status (has work / no work)
-  - Agent sleep/exit (completion status)
-  - Example: "15:30:15 - Ed woke → found mission-control (fix phase) → working"
-  - Example: "15:35:22 - Ed slept → completed 3 fixes"
-- **Source:** Parse from memory/*-agent-*.md files or create agent event log
-- **Files to Modify:** `src/components/LiveLog.jsx`, `src/hooks/useLiveLog.js` (create)
-- **Priority:** medium
+- **Status:** Fixed by Ed
 
-
-## Layout Redesign 2026-02-05T21:18:00Z
+## Layout Redesign 2026-02-05T21:18:00Z - ✅ FIXED
 - **Type:** major layout change
-- **Prime Focus:** Agents and their work
-- **Changes:**
-  1. **Agent Status Panel:**
-     - Make smaller — compact individual squares/cards
-     - Each agent: small square with name, status light, current task summary
-     - Grid layout for agents (like 2x2 or 3x2)
-  2. **Agent Reports Panel:**
-     - Make LARGE — prime real estate
-     - Clickable report list on left/column
-     - Selected report displayed in full on right/main area
-     - Can read entire report content, not just preview
-  3. **Rearrange Priority:**
-     - Top row: Agents (compact) + Reports (large)
-     - Below: Projects, Tokens, Queue, Health, Live Log
-- **Files to Modify:** `src/components/Dashboard.jsx`, `src/components/AgentStatus.jsx`, `src/components/AgentReports.jsx`
-- **Priority:** high
+- **Status:** Fixed by Ed
+
+---
+
+## NEW FEEDBACK - Round 2 (2026-02-05T21:48:00Z)
+
+### 1. Agent Status Panel Refinements
+- **Stack agent names vertically** (not horizontal)
+- **Remove prefixes/suffixes:** Strip "AGENTS/" and ".md" — just show names ("Ed", "Dummy", "Builder", "Architect")
+- **Shrink/compress the window** — more compact
+- **Fix active statuses** — ensure `.ed-working`, `.builder-working`, etc. files are correctly detected
+- **Show:** Name + Status light only (minimal)
+
+### 2. Token Monitor Fixes
+- **Show TOTAL for entire project** — aggregate all token usage
+- **Not per-file** — user wants one total number
+- **Display:** Total input tokens, total output tokens, total cost (sum of all 09-tokens.json)
+
+### 3. Queue Status Refinement
+- **Current:** Not useful/confusing
+- **Show usable data:**
+  - Number of projects in each phase (plan: 2, implement: 1, build: 0, etc.)
+  - Total active agents
+  - Queue depth summary
+  - Recent phase transitions
+
+### 4. System Health Panel — REPLACE
+- **Current:** Redundant data
+- **Replace with:** "Recent Activity" or remove
+- **OR show:** Last 5 phase changes across all projects
+
+### 5. Live Log Refinements
+- **Mute the text** — softer color, less prominent
+- **Timestamp prefix** — "16:45:30 - message"
+- **One line per entry** — no multi-line wrapping
+- **Format:** `[timestamp] [agent] [event]`
+- **Example:** "16:45:30 - Ed woke, mission-control (fix phase) → working"
+
+### Files to Modify
+- `src/components/AgentStatus.jsx`
+- `src/components/TokenMonitor.jsx`
+- `src/components/QueueStatus.jsx`
+- `src/components/SystemHealth.jsx` (or replace)
+- `src/components/LiveLog.jsx`
+- `src/hooks/useTokens.js`
+- `src/hooks/useQueue.js`
+- `src/hooks/useAgents.js`
+
+**Priority:** High
+**Phase:** Current phase is `test` — transition to `fix` for these changes

@@ -16,98 +16,45 @@ export function AgentStatus() {
     }
   };
 
-  const getStatusGlow = (status) => {
-    switch (status) {
-      case 'working':
-        return 'shadow-[0_0_8px_rgba(255,204,0,0.4)]';
-      case 'error':
-        return 'shadow-[0_0_8px_rgba(255,51,102,0.4)]';
-      case 'idle':
-      default:
-        return '';
-    }
-  };
-
+  // Extract just the agent name from various formats
   const formatAgentName = (name) => {
-    // Clean up agent names
+    if (!name) return 'Unknown';
+    // Handle formats like "AGENTS/Ed.md - Ed Agent Profile (File-State Edition)"
+    const match = name.match(/([^/\s]+)\.md/);
+    if (match) return match[1];
+    // Fallback: strip common suffixes
     return name
-      .replace(' Agent Profile', '')
-      .replace(' - File-State Edition', '')
-      .replace(' - Cracked Programmer', '')
-      .replace('(File-State Edition)', '')
+      .replace(/^AGENTS\//, '')
+      .replace(/\.md$/, '')
+      .replace(/\s*-.*$/, '')
       .trim();
   };
 
-  const getWorkingEmoji = (phase) => {
-    switch (phase) {
-      case 'implement':
-        return '✍️';
-      case 'fix':
-        return '🔧';
-      case 'build':
-        return '🔨';
-      case 'test':
-        return '🧪';
-      case 'plan':
-        return '📋';
-      default:
-        return '⚙️';
-    }
-  };
-
   return (
-    <Panel title="Agent Status" loading={loading} error={error} className="h-full">
-      <div className="grid grid-cols-2 gap-2">
+    <Panel title="Agents" loading={loading} error={error} className="h-full">
+      <div className="space-y-0.5">
         {agents.length === 0 && !loading && (
-          <div className="col-span-2 text-mission-muted text-sm text-center py-4">
-            No agents found
+          <div className="text-mission-muted text-[10px] text-center py-1">
+            No agents
           </div>
         )}
         {agents.map((agent) => (
           <div 
             key={agent.id}
-            className={`p-3 bg-mission-bg/50 rounded border border-mission-border/50 ${getStatusGlow(agent.status)}`}
+            className="flex items-center gap-1.5 px-1.5 py-0.5 rounded hover:bg-mission-bg/30"
           >
-            <div className="flex items-center gap-2 mb-2">
-              {/* Status Light */}
-              <div className="relative">
-                <div className={`w-3 h-3 rounded-full ${getStatusColor(agent.status)}`} />
-                {agent.status === 'working' && (
-                  <div className={`absolute inset-0 w-3 h-3 rounded-full ${getStatusColor(agent.status)} animate-ping opacity-75`} />
-                )}
-              </div>
-              
-              {/* Agent Name */}
-              <div className="text-sm font-bold text-mission-text truncate">
-                {formatAgentName(agent.name)}
-              </div>
+            {/* Status Light */}
+            <div className="relative flex-shrink-0">
+              <div className={`w-1.5 h-1.5 rounded-full ${getStatusColor(agent.status)}`} />
+              {agent.status === 'working' && (
+                <div className={`absolute inset-0 w-1.5 h-1.5 rounded-full ${getStatusColor(agent.status)} animate-ping opacity-75`} />
+              )}
             </div>
-
-            {/* Status Badge */}
-            <div className="flex items-center justify-between">
-              <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                agent.status === 'working' 
-                  ? 'bg-status-working/20 text-status-working' 
-                  : agent.status === 'error'
-                  ? 'bg-status-error/20 text-status-error'
-                  : 'bg-mission-border/50 text-mission-muted'
-              }`}>
-                {agent.status === 'working' ? 'ACTIVE' : agent.status.toUpperCase()}
-              </span>
+            
+            {/* Agent Name - minimal */}
+            <div className="text-[11px] font-medium text-mission-text truncate leading-tight">
+              {formatAgentName(agent.name)}
             </div>
-
-            {/* Current Task (if working) */}
-            {agent.status === 'working' && agent.project && (
-              <div className="mt-2 pt-2 border-t border-mission-border/30 text-xs">
-                <div className="flex items-center gap-1 text-status-working">
-                  <span>{getWorkingEmoji(agent.phase)}</span>
-                  <span className="font-medium capitalize">{agent.phase}</span>
-                </div>
-                <div className="text-mission-muted truncate mt-0.5" title={agent.project}>
-                  {agent.project}
-                </div>
-              </div>
-            )}
           </div>
         ))}
       </div>

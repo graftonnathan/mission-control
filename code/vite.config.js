@@ -27,13 +27,14 @@ function readFile(filePath) {
 function getAgentStatus(agentId) {
   const projectsDir = path.join(WORKSPACE_ROOT, 'PROJECTS');
   const entries = readDir(projectsDir);
+  const agentIdLower = agentId.toLowerCase();
   
   for (const entry of entries) {
     if (entry.isDirectory()) {
-      const workingFile = path.join(projectsDir, entry.name, `.${agentId.toLowerCase()}-working`);
-      const edWorkingFile = path.join(projectsDir, entry.name, '.ed-working');
+      // Check for agent-specific working file
+      const workingFile = path.join(projectsDir, entry.name, `.${agentIdLower}-working`);
       
-      if (fs.existsSync(workingFile) || (agentId.toLowerCase() === 'ed' && fs.existsSync(edWorkingFile))) {
+      if (fs.existsSync(workingFile)) {
         const phaseFile = path.join(projectsDir, entry.name, '04-phase');
         const phase = readFile(phaseFile)?.trim() || 'unknown';
         return {

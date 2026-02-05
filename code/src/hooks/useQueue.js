@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
-import { scanQueue } from '../utils/fileApi';
+import { scanProjects, scanAgents } from '../utils/fileApi';
 import { POLL_INTERVALS } from '../utils/constants';
 
 export function useQueue() {
-  const [queue, setQueue] = useState([]);
+  const [data, setData] = useState({
+    phaseCounts: {},
+    activeAgents: 0,
+    recentTransitions: []
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
@@ -11,11 +15,41 @@ export function useQueue() {
   useEffect(() => {
     let isMounted = true;
 
-    const loadQueue = async () => {
+    const loadData = async () => {
       try {
-        const data = await scanQueue();
+        // Get projects for phase counts
+        const projects = await scanProjects() || [];
+        
+        // Get agents for active count
+        const agents = await scanAgents() || [];
+        
         if (isMounted) {
-          setQueue(data || []);
+          // Calculate phase counts
+          const phaseCounts = {};
+          projects.forEach(p => {
+            const phase = p.phase || 'unknown';
+            phaseCounts[phase] = (phaseCounts[phase] || 0) + 1;
+          });
+
+          // Count active agents
+          const activeAgents = agents.filter(a => a.status === 'working').length;
+
+          // Get recent transitions (sorted by last modified)
+          const recentTransitions = projects
+            .slice()
+            .sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified))
+            .slice(0, 5)
+            .map(p => ({
+              project: p.name,
+              to: p.phase,
+              time: p.lastModified
+            }));
+
+          setData({
+            phaseCounts,
+            activeAgents,
+            recentTransitions
+          });
           setLastUpdate(new Date());
           setError(null);
         }
@@ -31,10 +65,10 @@ export function useQueue() {
     };
 
     const timeout = setTimeout(() => {
-      loadQueue();
+      loadData();
     }, 1000);
 
-    const interval = setInterval(loadQueue, POLL_INTERVALS.QUEUE);
+    const interval = setInterval(loadData, POLL_INTERVALS.QUEUE);
 
     return () => {
       isMounted = false;
@@ -43,13 +77,5 @@ export function useQueue() {
     };
   }, []);
 
-  // Calculate queue stats
-  const stats = {
-    total: queue.length,
-    backlog: queue.filter(q => q.status === 'backlog').length,
-    claimed: queue.filter(q => q.status === 'claimed').length,
-    completed: queue.filter(q => q.status === 'completed').length
-  };
-
-  return { queue, stats, loading, error, lastUpdate };
+  return { ...data, loading, error, lastUpdate };
 }
