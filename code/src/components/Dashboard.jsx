@@ -16,7 +16,7 @@ export function Dashboard() {
       <header className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="w-3 h-3 rounded-full bg-status-active animate-pulse-slow" />
-          <h1 className="text-2xl font-bold tracking-wider text-mission-muted uppercase">
+          <h1 className="text-2xl font-bold tracking-wider text-mission-text uppercase">
             Mission Control
           </h1>
         </div>
@@ -25,7 +25,7 @@ export function Dashboard() {
             <div className="text-xs text-mission-muted uppercase tracking-wider">
               System Time
             </div>
-            <div className="font-mono text-lg text-mission-muted">
+            <div className="font-mono text-lg text-mission-text">
               {formatTime(currentTime)}
             </div>
           </div>
@@ -40,41 +40,47 @@ export function Dashboard() {
         </div>
       </header>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Projects - spans 1 row */}
-        <div className="lg:row-span-2">
-          <ProjectMonitor />
+      {/* Main Grid - New Layout */}
+      <div className="space-y-4">
+        {/* Top Row: Agent Status (compact) + Agent Reports (large) */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          {/* Agent Status - compact, 1 column */}
+          <div className="lg:col-span-1">
+            <AgentStatus />
+          </div>
+          
+          {/* Agent Reports - large, 3 columns */}
+          <div className="lg:col-span-3">
+            <AgentReports />
+          </div>
         </div>
 
-        {/* Agent Status - spans 2 rows */}
-        <div className="lg:row-span-2">
-          <AgentStatus />
-        </div>
+        {/* Bottom Row: Projects, Tokens, Queue, Health, Live Log */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* Projects - spans 2 rows worth of height */}
+          <div className="md:row-span-2">
+            <ProjectMonitor />
+          </div>
 
-        {/* Token Monitor */}
-        <div>
-          <TokenMonitor />
-        </div>
+          {/* Token Monitor */}
+          <div>
+            <TokenMonitor />
+          </div>
 
-        {/* System Health */}
-        <div>
-          <SystemHealth />
-        </div>
+          {/* Queue Status */}
+          <div>
+            <QueueStatus />
+          </div>
 
-        {/* Queue Status */}
-        <div>
-          <QueueStatus />
-        </div>
+          {/* System Health */}
+          <div>
+            <SystemHealth />
+          </div>
 
-        {/* Agent Reports */}
-        <div>
-          <AgentReports />
-        </div>
-
-        {/* Live Log */}
-        <div>
-          <LiveLog />
+          {/* Live Log */}
+          <div>
+            <LiveLog />
+          </div>
         </div>
       </div>
 

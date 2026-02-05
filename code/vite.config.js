@@ -23,6 +23,75 @@ function readFile(filePath) {
   }
 }
 
+// Check if agent is currently working
+function getAgentStatus(agentId) {
+  const projectsDir = path.join(WORKSPACE_ROOT, 'PROJECTS');
+  const entries = readDir(projectsDir);
+  
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      const workingFile = path.join(projectsDir, entry.name, `.${agentId.toLowerCase()}-working`);
+      const edWorkingFile = path.join(projectsDir, entry.name, '.ed-working');
+      
+      if (fs.existsSync(workingFile) || (agentId.toLowerCase() === 'ed' && fs.existsSync(edWorkingFile))) {
+        const phaseFile = path.join(projectsDir, entry.name, '04-phase');
+        const phase = readFile(phaseFile)?.trim() || 'unknown';
+        return {
+          status: 'working',
+          project: entry.name,
+          phase: phase,
+          task: `${phase} phase on ${entry.name}`
+        };
+      }
+    }
+  }
+  
+  return { status: 'idle', project: null, phase: null, task: null };
+}
+
+// Parse memory files for agent lifecycle events
+function parseAgentEvents() {
+  const memoryDir = path.join(WORKSPACE_ROOT, 'memory');
+  const entries = readDir(memoryDir);
+  const events = [];
+  
+  for (const entry of entries) {
+    if (entry.isFile() && entry.name.endsWith('.md')) {
+      const content = readFile(path.join(memoryDir, entry.name)) || '';
+      const stats = fs.statSync(path.join(memoryDir, entry.name));
+      
+      // Parse agent activity from memory files
+      // Look for patterns like "Ed working on..." or agent-specific content
+      const lines = content.split('\n');
+      
+      for (const line of lines) {
+        // Match agent activity patterns
+        const agentMatch = line.match(/\b(Ed|Builder|Dummy|Architect)\b/i);
+        if (agentMatch) {
+          const agent = agentMatch[1];
+          let eventType = 'status';
+          if (line.includes('working') || line.includes('fix')) eventType = 'working';
+          if (line.includes('complete') || line.includes('done')) eventType = 'complete';
+          if (line.includes('error') || line.includes('fail')) eventType = 'error';
+          
+          events.push({
+            timestamp: stats.mtime,
+            agent: agent,
+            type: eventType,
+            message: line.trim().substring(0, 200),
+            source: entry.name
+          });
+        }
+      }
+    }
+  }
+  
+  // Sort by timestamp descending, take latest 50
+  return events
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .slice(0, 50);
+}
+
 // API middleware for workspace file access
 function workspaceApiMiddleware() {
   return {
@@ -78,12 +147,18 @@ function workspaceApiMiddleware() {
             
             // Extract name from first line (assuming # Agent Name format)
             const nameMatch = content.match(/^#\s+(.+)$/m);
-            const name = nameMatch ? nameMatch[1] : agentId;
+            const name = nameMatch ? nameMatch[1].replace(' - Ed Agent Profile (File-State Edition)', '').replace(' Agent Profile', '').trim() : agentId;
+            
+            // Check if agent is working
+            const agentStatus = getAgentStatus(agentId);
             
             return {
               id: agentId,
               name,
-              status: 'idle', // Would need actual status tracking
+              status: agentStatus.status,
+              currentTask: agentStatus.task,
+              project: agentStatus.project,
+              phase: agentStatus.phase,
               lastSeen: new Date().toISOString()
             };
           });
@@ -118,20 +193,40 @@ function workspaceApiMiddleware() {
         const memoryDir = path.join(WORKSPACE_ROOT, 'memory');
         const entries = readDir(memoryDir);
         
-        // Get recent memory files
+        // Get recent memory files with actual content
         const reports = entries
           .filter(e => e.isFile() && e.name.endsWith('.md'))
-          .slice(0, 20)
           .map(e => {
-            const stats = fs.statSync(path.join(memoryDir, e.name));
+            const filePath = path.join(memoryDir, e.name);
+            const content = readFile(filePath) || '';
+            const stats = fs.statSync(filePath);
+            
+            // Determine agent from filename or content
+            let agent = 'system';
+            const agentMatch = e.name.match(/^(\w+)-/);
+            if (agentMatch) agent = agentMatch[1];
+            
+            // Determine type from content
+            let type = 'status';
+            if (content.includes('error') || content.includes('fail')) type = 'error';
+            else if (content.includes('complete') || content.includes('success')) type = 'complete';
+            else if (content.includes('working') || content.includes('progress')) type = 'working';
+            
+            // Extract first meaningful line for preview
+            const lines = content.split('\n').filter(l => l.trim());
+            const preview = lines.slice(0, 10).join('\n');
+            
             return {
               filename: e.name,
               timestamp: stats.mtime,
-              type: 'status',
-              agent: 'system',
-              content: `Memory file: ${e.name}`
+              type: type,
+              agent: agent.charAt(0).toUpperCase() + agent.slice(1),
+              content: content,
+              preview: preview
             };
-          });
+          })
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+          .slice(0, 20);
         
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify(reports));
@@ -173,14 +268,37 @@ function workspaceApiMiddleware() {
       server.middlewares.use('/api/health', (req, res, next) => {
         if (req.method !== 'GET') return next();
         
+        // Count active agents
+        const agentsDir = path.join(WORKSPACE_ROOT, 'AGENTS');
+        const agentFiles = readDir(agentsDir).filter(e => e.isFile() && e.name.endsWith('.md'));
+        
+        let activeAgents = 0;
+        for (const agentFile of agentFiles) {
+          const agentId = agentFile.name.replace('.md', '');
+          const status = getAgentStatus(agentId);
+          if (status.status === 'working') activeAgents++;
+        }
+        
         const health = {
           status: 'healthy',
           timestamp: new Date().toISOString(),
-          uptime: process.uptime()
+          uptime: process.uptime(),
+          activeAgents: activeAgents,
+          totalAgents: agentFiles.length
         };
         
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify(health));
+      });
+
+      // GET /api/events - agent lifecycle events
+      server.middlewares.use('/api/events', (req, res, next) => {
+        if (req.method !== 'GET') return next();
+        
+        const events = parseAgentEvents();
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(events));
       });
     }
   };

@@ -1,62 +1,84 @@
-import { useState, useEffect, useRef } from 'react';
+import { useLiveLog } from '../hooks/useLiveLog';
 import { Panel } from './StatusBadge';
 import { formatTime } from '../utils/formatters';
 
 export function LiveLog() {
-  const [logs, setLogs] = useState([]);
-  const scrollRef = useRef(null);
+  const { events, loading, error } = useLiveLog();
 
-  // Simulate live log entries - in real implementation, this would connect to a log source
-  useEffect(() => {
-    const initialLogs = [
-      { time: new Date(), type: 'info', message: 'Dashboard initialized' },
-      { time: new Date(Date.now() - 5000), type: 'success', message: 'Connected to workspace' },
-    ];
-    setLogs(initialLogs);
-
-    // Add periodic heartbeat logs
-    const interval = setInterval(() => {
-      setLogs(prev => {
-        const newLogs = [
-          { time: new Date(), type: 'heartbeat', message: 'Poll cycle complete' },
-          ...prev.slice(0, 49) // Keep last 50 logs
-        ];
-        return newLogs;
-      });
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const getLogColor = (type) => {
+  const getEventIcon = (type) => {
     switch (type) {
+      case 'working':
+        return '⚡';
+      case 'complete':
+        return '✓';
+      case 'error':
+        return '✗';
+      case 'status':
+        return '•';
+      default:
+        return '•';
+    }
+  };
+
+  const getEventColor = (type) => {
+    switch (type) {
+      case 'working':
+        return 'text-status-working';
+      case 'complete':
+        return 'text-status-active';
       case 'error':
         return 'text-status-error';
-      case 'success':
-        return 'text-status-active';
-      case 'warning':
-        return 'text-status-working';
-      case 'heartbeat':
-        return 'text-mission-muted/50';
+      case 'status':
+        return 'text-blue-400';
       default:
         return 'text-mission-muted';
     }
   };
 
+  const getAgentColor = (agent) => {
+    switch (agent?.toLowerCase()) {
+      case 'ed':
+        return 'text-purple-400';
+      case 'builder':
+        return 'text-orange-400';
+      case 'dummy':
+        return 'text-cyan-400';
+      case 'architect':
+        return 'text-pink-400';
+      default:
+        return 'text-mission-text';
+    }
+  };
+
   return (
-    <Panel title="Live Log" className="h-full">
-      <div 
-        ref={scrollRef}
-        className="font-mono text-xs space-y-1 max-h-[200px] overflow-y-auto"
-      >
-        {logs.map((log, idx) => (
-          <div key={idx} className="flex gap-2">
-            <span className="text-mission-muted/50 whitespace-nowrap">
-              {formatTime(log.time)}
+    <Panel title="Live Log" loading={loading} error={error} className="h-full">
+      <div className="h-[200px] overflow-y-auto space-y-1 font-mono text-xs">
+        {events.length === 0 && !loading && (
+          <div className="text-mission-muted text-center py-4">
+            No recent events
+          </div>
+        )}
+        {events.map((event, idx) => (
+          <div 
+            key={idx}
+            className="flex items-start gap-2 p-1.5 hover:bg-mission-bg/30 rounded"
+          >
+            <span className={`${getEventColor(event.type)} mt-0.5`}>
+              {getEventIcon(event.type)}
             </span>
-            <span className={getLogColor(log.type)}>
-              {log.message}
-            </span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-mission-muted">
+                  {formatTime(event.timestamp)}
+                </span>
+                <span className={`font-bold ${getAgentColor(event.agent)}`}>
+                  {event.agent}
+                </span>
+              </div>
+              <div className={`truncate ${getEventColor(event.type)}`}>
+                {event.message}
+              </div>
+            </div>
           </div>
         ))}
       </div>

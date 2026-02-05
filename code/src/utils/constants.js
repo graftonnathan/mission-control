@@ -7,7 +7,8 @@ export const POLL_INTERVALS = {
   QUEUE: 5000,
   REPORTS: 10000,
   TOKENS: 10000,
-  HEALTH: 5000
+  HEALTH: 5000,
+  EVENTS: 5000
 };
 
 // Phase colors for status badges
