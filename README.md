@@ -9,8 +9,6 @@
 ### 📊 Real-Time Project Monitoring
 Track all your OpenClaw projects in one place. View current phase, priority, blocked status, and last activity at a glance.
 
-![Projects Panel](./screenshots/design-review-02-projects.png)
-
 **Key Capabilities:**
 - **Phase Management** — Drag-and-drop phase transitions (plan → implement → build → test → fix → complete)
 - **Priority Queue** — Visual priority indicators with sorting
