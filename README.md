@@ -31,8 +31,6 @@ Monitor all AI agents in real-time. See who's working, what they're working on, 
 ### 💰 Token Tracking & Cost Management
 Real-time token usage monitoring with cost estimation across all projects.
 
-![Token Monitor](./screenshots/design-review-04-tokens.png)
-
 **Features:**
 - Per-project token breakdown (input/output)
 - Estimated cost calculations
@@ -42,8 +40,6 @@ Real-time token usage monitoring with cost estimation across all projects.
 
 ### 📋 Task Queue Management (EXCHANGE)
 Centralized task queue for coordinating work between agents.
-
-![Queue Status](./screenshots/design-review-05-queue.png)
 
 **Queue Operations:**
 - View pending, active, and completed tasks
