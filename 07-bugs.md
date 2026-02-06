@@ -320,9 +320,9 @@ Multiple panels not using their full allocated space:
 ## Bug - Top Windows Need MORE Height (+200px)
 
 **Reported:** 2026-02-05T20:20:00Z  
-**Fixed:** (pending)  
+**Fixed:** 2026-02-05T20:22:00Z  
 **Severity:** High (layout)  
-**Status:** 🔴 ACTIVE
+**Status:** ✅ FIXED
 
 ### Issue
 Top row panels still need MORE height. Current height (420px) is not enough - needs an **additional 200px** (total ~620px or more).
@@ -335,18 +335,18 @@ Top row panels still need MORE height. Current height (420px) is not enough - ne
 - Height was restored to 420px but user needs MORE space
 - Panels still feel cramped
 
-### Fix Required
-- Increase top row height from 420px to ~620px (or add 200px to whatever current value is)
-- Check `Dashboard.jsx` for top row height setting
+### Fix Applied
+- Increased top row height from 420px to 620px in `Dashboard.jsx`
+- Top row now has adequate vertical space for Agent Status and Agent Reports panels
 
 ---
 
 ## Bug - Log Scrollbar Still Not Visible
 
 **Reported:** 2026-02-05T20:20:00Z  
-**Fixed:** (pending)  
+**Fixed:** 2026-02-05T20:22:00Z  
 **Severity:** Medium (usability)  
-**Status:** 🔴 ACTIVE
+**Status:** ✅ FIXED
 
 ### Issue
 Log panel scrollbar is still not visible or not working. User cannot scroll through log history.
@@ -359,11 +359,12 @@ Log panel scrollbar is still not visible or not working. User cannot scroll thro
 - Scrollbar not appearing or not styled properly
 - Cannot scroll log content
 
-### Fix Required
-- Verify `custom-scrollbar` class is applied correctly
-- Check if `index.css` scrollbar styles are loaded
-- May need to add explicit `overflow-y: scroll` or webkit scrollbar styles
-- Ensure parent container has defined height for scrollbar to appear
+### Fix Applied
+- Updated `index.css` with more explicit scrollbar styling
+- Added `scrollbar-width` for Firefox compatibility
+- Increased scrollbar width from 6px to 8px for better visibility
+- Added `display: block !important` to force scrollbar visibility
+- Enhanced contrast with lighter thumb color (#4a4a5e) against darker track (#1a1a2e)
 
 ---
 
