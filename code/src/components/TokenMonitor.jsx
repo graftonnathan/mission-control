@@ -12,10 +12,10 @@ export function TokenMonitor({ selectedProject }) {
     : null;
 
   return (
-    <Panel title={displayProject ? `Tokens: ${displayProject.name}` : 'Tokens'} loading={loading} error={error} className="h-full">
+    <Panel title={displayProject ? `Tokens: ${displayProject.name}` : 'Tokens'} loading={loading} error={error} className="h-full" flexContent>
       {displayProject ? (
         // Project-specific detailed view
-        <div className="space-y-3 h-full overflow-y-auto">
+        <div className="space-y-3 flex-1 overflow-y-auto min-h-0">
           <div className="bg-mission-bg/50 rounded p-3">
             <div className="text-xs text-mission-muted uppercase mb-2">Input Tokens</div>
             <div className="text-xl font-mono font-semibold text-mission-text">
@@ -40,7 +40,7 @@ export function TokenMonitor({ selectedProject }) {
         </div>
       ) : (
         // List view of all projects
-        <div className="h-full overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           <table className="w-full text-xs">
             <thead className="text-mission-muted uppercase text-xs">
               <tr>

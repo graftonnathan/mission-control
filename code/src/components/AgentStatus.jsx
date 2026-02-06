@@ -54,8 +54,8 @@ export function AgentStatus() {
   };
 
   return (
-    <Panel title="Agents" loading={loading} error={error} className="h-full">
-      <div className="space-y-2">
+    <Panel title="Agents" loading={loading} error={error} className="h-full" flexContent>
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-2">
         {agents.length === 0 && !loading && (
           <div className="text-mission-muted text-sm text-center py-2">
             No agents

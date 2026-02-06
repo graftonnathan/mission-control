@@ -12,8 +12,8 @@ export function SystemHealth() {
     .slice(0, 5);
 
   return (
-    <Panel title="Recent Activity" loading={loading} error={error} className="h-full">
-      <div className="space-y-2">
+    <Panel title="Recent Activity" loading={loading} error={error} className="h-full" flexContent>
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-2">
         {recentActivity.length === 0 && !loading && (
           <div className="text-mission-muted text-xs text-center py-4">
             No recent activity

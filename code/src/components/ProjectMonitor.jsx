@@ -30,8 +30,8 @@ export function ProjectMonitor({ selectedProject, onSelectProject }) {
   };
 
   return (
-    <Panel title="Projects" loading={loading} error={error} className="h-full">
-      <div className="space-y-2 overflow-y-auto h-full pr-1">
+    <Panel title="Projects" loading={loading} error={error} className="h-full" flexContent>
+      <div className="space-y-2 overflow-y-auto flex-1 pr-1 min-h-0">
         {sortedProjects.length === 0 && !loading && (
           <div className="text-mission-muted text-sm text-center py-4">
             No projects found

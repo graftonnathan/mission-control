@@ -81,8 +81,8 @@ export function AgentReports() {
   }, [isDragging]);
 
   return (
-    <Panel title="Agent Reports" loading={loading} error={error} className="h-full">
-      <div ref={containerRef} className="flex h-full gap-0">
+    <Panel title="Agent Reports" loading={loading} error={error} className="h-full" flexContent>
+      <div ref={containerRef} className="flex flex-1 gap-0 min-h-0">
         {/* Report List - resizable */}
         <div 
           className="overflow-y-auto border-r border-mission-border/50 pr-2"

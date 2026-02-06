@@ -32,17 +32,23 @@ export function useQueue() {
 
           if (Array.isArray(queueData)) {
             queueData.forEach(file => {
-              if (file?.tasks) {
-                if (file.last_updated && file.tasks.length === 0) {
-                  // Empty file, skip
-                  return;
-                }
-                // Categorize based on file name if available
-                if (file.version) {
-                  // It's a queue file, check which one
-                  if (file.tasks.every(t => t.status === 'completed' || t.completed)) {
+              if (file?.tasks && Array.isArray(file.tasks)) {
+                // Categorize based on filename
+                const filename = file.filename || '';
+                if (filename.includes('backlog')) {
+                  backlog = [...backlog, ...file.tasks];
+                } else if (filename.includes('claimed')) {
+                  claimed = [...claimed, ...file.tasks];
+                } else if (filename.includes('completed') || filename.includes('done')) {
+                  completed = [...completed, ...file.tasks];
+                } else {
+                  // Default: categorize by task status if filename doesn't match
+                  const allCompleted = file.tasks.every(t => t.status === 'completed' || t.completed);
+                  const allClaimed = file.tasks.every(t => t.agent || t.claimed);
+                  
+                  if (allCompleted) {
                     completed = [...completed, ...file.tasks];
-                  } else if (file.tasks.every(t => t.agent || t.claimed)) {
+                  } else if (allClaimed) {
                     claimed = [...claimed, ...file.tasks];
                   } else {
                     backlog = [...backlog, ...file.tasks];

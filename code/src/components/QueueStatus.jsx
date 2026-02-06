@@ -5,7 +5,7 @@ export function QueueStatus() {
   const { backlog, claimed, completed, stats, loading, error } = useQueue();
 
   return (
-    <Panel title="Queue" loading={loading} error={error} className="h-full">
+    <Panel title="Queue" loading={loading} error={error} className="h-full" flexContent>
       {/* Stats */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="bg-mission-bg/50 rounded p-2 text-center">
@@ -29,7 +29,7 @@ export function QueueStatus() {
       </div>
 
       {/* Recent items */}
-      <div className="space-y-2">
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-2">
         {backlog.length > 0 && (
           <div>
             <div className="text-[10px] text-mission-muted uppercase mb-1">Backlog</div>

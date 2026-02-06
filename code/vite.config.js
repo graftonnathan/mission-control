@@ -148,7 +148,20 @@ function workspaceApiMiddleware() {
             
             // Extract name from first line (assuming # Agent Name format)
             const nameMatch = content.match(/^#\s+(.+)$/m);
-            const name = nameMatch ? nameMatch[1].replace(' - Ed Agent Profile (File-State Edition)', '').replace(' Agent Profile', '').trim() : agentId;
+            let name = agentId;
+            if (nameMatch) {
+              // Handle formats like "AGENTS/Ed.md - Ed Agent Profile" or "Builder - Builder Agent"
+              name = nameMatch[1]
+                .replace(/^AGENTS\//, '')           // Remove AGENTS/ prefix
+                .replace(/\.md\s*/, ' ')            // Remove .md and add space
+                .replace(/\s*-\s*.*Agent Profile.*$/, '')  // Remove " - ... Agent Profile" suffix
+                .replace(/\s*Agent Profile.*$/, '')  // Remove "Agent Profile" suffix
+                .trim();
+              // If result is empty or just the filename, use agentId
+              if (!name || name === agentId.toLowerCase()) {
+                name = agentId;
+              }
+            }
             
             // Check if agent is working
             const agentStatus = getAgentStatus(agentId);
@@ -179,7 +192,11 @@ function workspaceApiMiddleware() {
           .filter(e => e.isFile() && e.name.endsWith('.json'))
           .map(e => {
             const content = readFile(path.join(queueDir, e.name));
-            return content ? JSON.parse(content) : null;
+            const data = content ? JSON.parse(content) : null;
+            if (data) {
+              data.filename = e.name; // Include filename for categorization
+            }
+            return data;
           })
           .filter(Boolean);
         
