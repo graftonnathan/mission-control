@@ -58,6 +58,32 @@ See `09-design-feedback.md` for full details with screenshots.
 
 ---
 
+## Token Monitor Enhancement - Round 5
+**Priority:** High  
+**Status:** 🔄 PENDING
+
+### Current Behavior
+Token Monitor shows context window size only.
+
+### Requested Enhancement
+Totalize actual token usage:
+- **Input tokens**: Sum of all payload data going OUT to agents
+- **Output tokens**: Sum of all payload data coming IN from agents
+- Show totals per agent, per project, and global dashboard total
+- Track cumulative totals (session lifetime)
+
+### Implementation Notes
+- Parse OpenClaw session transcripts for token counts
+- Read from session JSON files or agent activity logs
+- Store running totals in a JSON file that persists across reloads
+- Display as: `Input: 45.2k | Output: 38.7k | Total: 83.9k`
+
+**Assigned to:** Ed  
+**Requested by:** Nathan  
+**Date:** 2026-02-05
+
+---
+
 **Previous Round - Assigned to:** Ed
 **Previous Round - Completed:** 2026-02-05
 **Previous Round - Commit:** 4346e4c
