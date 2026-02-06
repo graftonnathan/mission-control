@@ -67,10 +67,10 @@ export function ProjectMonitor({ selectedProject, onSelectProject }) {
               {project.tokens && (
                 <div className="mt-2 pt-2 border-t border-mission-border/30 flex items-center justify-between text-xs">
                   <span className="text-mission-muted">
-                    {formatTokens((project.tokens.input || 0) + (project.tokens.output || 0))} tok
+                    {formatTokens((project.tokens.total_input_tokens || 0) + (project.tokens.total_output_tokens || 0))} tok
                   </span>
                   <span className="text-status-active">
-                    {formatCurrency(calculateCost(project.tokens.input || 0, project.tokens.output || 0))}
+                    {formatCurrency(calculateCost(project.tokens.total_input_tokens || 0, project.tokens.total_output_tokens || 0))}
                   </span>
                 </div>
               )}

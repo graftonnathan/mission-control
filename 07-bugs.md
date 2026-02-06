@@ -501,6 +501,35 @@ Updated all AGENTS/*.md files to make memory writing **MANDATORY**:
 
 ---
 
+## Design - Soften Contrast Further
+
+**Reported:** 2026-02-05T21:01:00Z  
+**Fixed:** (pending)  
+**Severity:** Low (visual preference)  
+**Status:** 🎨 DESIGN TASK
+
+### Issue
+Current contrast is still too harsh/aggressive. User wants "vibey not aggressive" aesthetic.
+
+### Current
+- Text: `#e0e0ff` (bright lavender-white)
+- Background: `#13131f` (dark navy)
+
+### Desired
+- Softer, more muted text color
+- Warmer/softer background
+- Relaxed, "vibey" NASA aesthetic (not harsh military console)
+
+### Fix Required
+- Reduce text brightness (try `#a0a0c0` or `#b0b0d0`)
+- Consider slightly lighter background or warmer tones
+- Maintain readability while being less aggressive on the eyes
+
+**Assigned to:** Designer (when available)  
+**User Preference:** Soft contrast over harsh contrast
+
+---
+
 ## All Bugs Resolved
 
 All reported bugs have been addressed:
