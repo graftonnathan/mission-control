@@ -196,6 +196,39 @@ function workspaceApiMiddleware() {
             };
           });
         
+        // On first load, initialize activity history with current states
+        if (isFirstLoad) {
+          isFirstLoad = false;
+          const history = readActivityHistory();
+          if (history.length === 0 && projects.length > 0) {
+            // Seed activity history with current project states
+            const initialEntries = projects.map(project => ({
+              id: `init-${Date.now()}-${project.name}`,
+              project: project.name,
+              oldPhase: 'none',
+              newPhase: project.phase,
+              timestamp: new Date().toISOString()
+            }));
+            writeActivityHistory(initialEntries);
+            console.log(`[Activity] Initialized history with ${initialEntries.length} projects`);
+          }
+          // Populate lastProjectPhases for future change detection
+          projects.forEach(project => {
+            lastProjectPhases.set(project.name, project.phase);
+          });
+        } else {
+          // Normal phase change detection
+          const changes = detectPhaseChanges(projects);
+          if (changes.length > 0) {
+            const history = readActivityHistory();
+            history.unshift(...changes);
+            if (history.length > MAX_ACTIVITY_ENTRIES) {
+              history.length = MAX_ACTIVITY_ENTRIES;
+            }
+            writeActivityHistory(history);
+          }
+        }
+        
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify(projects));
       });
@@ -416,57 +449,6 @@ function workspaceApiMiddleware() {
           });
           return;
         }
-        
-        next();
-      });
-
-      // Detect and record phase changes when projects are fetched
-      server.middlewares.use('/api/projects', (req, res, next) => {
-        if (req.method !== 'GET') return next();
-        
-        // Capture original end function
-        const originalEnd = res.end;
-        res.end = function(data) {
-          try {
-            const projects = JSON.parse(data);
-            
-            // On first load, initialize activity history with current states
-            if (isFirstLoad) {
-              isFirstLoad = false;
-              const history = readActivityHistory();
-              if (history.length === 0 && projects.length > 0) {
-                // Seed activity history with current project states
-                const initialEntries = projects.map(project => ({
-                  id: `init-${Date.now()}-${project.name}`,
-                  project: project.name,
-                  oldPhase: 'none',
-                  newPhase: project.phase,
-                  timestamp: new Date().toISOString()
-                }));
-                writeActivityHistory(initialEntries);
-                console.log(`[Activity] Initialized history with ${initialEntries.length} projects`);
-              }
-              // Populate lastProjectPhases for future change detection
-              projects.forEach(project => {
-                lastProjectPhases.set(project.name, project.phase);
-              });
-            } else {
-              // Normal phase change detection
-              const changes = detectPhaseChanges(projects);
-              if (changes.length > 0) {
-                const history = readActivityHistory();
-                history.unshift(...changes);
-                if (history.length > MAX_ACTIVITY_ENTRIES) {
-                  history.length = MAX_ACTIVITY_ENTRIES;
-                }
-                writeActivityHistory(history);
-              }
-            }
-          } catch (e) {
-            console.error('[Activity] Error processing projects:', e);
-          }
-          originalEnd.call(this, data);
-        };
         
         next();
       });
