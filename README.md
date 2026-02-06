@@ -1,6 +1,6 @@
-# 🚀 Mission Control
+# ⚡ Mission Control
 
-> A NASA-style mission control dashboard for managing OpenClaw AI agents, projects, and token usage.
+> A distributed task orchestration dashboard for managing OpenClaw AI agents, projects, and resource consumption.
 
 ![Mission Control Dashboard](./screenshots/design-review-01-full.png)
 
