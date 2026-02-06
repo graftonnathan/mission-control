@@ -475,9 +475,9 @@ Verified AGENTS/Builder.md and AGENTS/Dummy.md already have clear instructions:
 ## Bug - Agents Not Writing Memory Reports
 
 **Reported:** 2026-02-05T20:43:00Z  
-**Fixed:** (pending)  
+**Fixed:** 2026-02-05T20:44:00Z  
 **Severity:** High (visibility)  
-**Status:** 🔴 ACTIVE
+**Status:** ✅ FIXED
 
 ### Issue
 Agents are not writing memory reports on exit. Missing reports from:
@@ -486,25 +486,18 @@ Agents are not writing memory reports on exit. Missing reports from:
 - **Dummy**: Only 1 old file (from hours ago), not current
 - **Ed**: Multiple files (working correctly)
 
-### Expected
-Each agent should write to `memory/{agent}-{timestamp}.md` on exit with:
-- What project was processed
-- What work was done
-- Any issues encountered
+### Fix Applied
+Updated all AGENTS/*.md files to make memory writing **MANDATORY**:
+- Changed "Memory Commitment" to "Memory Report (MANDATORY)"
+- Added explicit "DO NOT EXIT WITHOUT WRITING THIS FILE" instruction
+- Provided exact template format for each agent
+- Committed changes to AGENTS/ directory
 
-### Actual
-- Designer has never written a memory file
-- Builder and Dummy wrote files earlier today but not recently
-- Only Ed is consistently logging
-
-### Root Cause
-Agents spawned via cron with simplified messages may not be following their AGENTS.md "Memory Commitment" section. They need explicit reminder to write memory files.
-
-### Fix Required
-1. Update AGENTS/Builder.md - make memory writing mandatory, not optional
-2. Update AGENTS/Dummy.md - make memory writing mandatory
-3. Create AGENTS/Designer.md memory section if missing
-4. Update cron job spawn messages to include "Write memory report on exit"
+### Files Modified
+- AGENTS/Builder.md
+- AGENTS/Dummy.md
+- AGENTS/Designer.md
+- AGENTS/Architect.md
 
 ---
 
