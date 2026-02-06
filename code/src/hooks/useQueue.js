@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
-import { scanProjects, scanAgents } from '../utils/fileApi';
+import { scanQueue } from '../utils/fileApi';
 import { POLL_INTERVALS } from '../utils/constants';
 
 export function useQueue() {
   const [data, setData] = useState({
-    phaseCounts: {},
-    activeAgents: 0,
-    recentTransitions: []
+    backlog: [],
+    claimed: [],
+    completed: [],
+    stats: {
+      backlogCount: 0,
+      claimedCount: 0,
+      completedCount: 0
+    }
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,38 +22,45 @@ export function useQueue() {
 
     const loadData = async () => {
       try {
-        // Get projects for phase counts
-        const projects = await scanProjects() || [];
-        
-        // Get agents for active count
-        const agents = await scanAgents() || [];
+        const queueData = await scanQueue();
         
         if (isMounted) {
-          // Calculate phase counts
-          const phaseCounts = {};
-          projects.forEach(p => {
-            const phase = p.phase || 'unknown';
-            phaseCounts[phase] = (phaseCounts[phase] || 0) + 1;
-          });
+          // Parse queue files - they come as array of file contents
+          let backlog = [];
+          let claimed = [];
+          let completed = [];
 
-          // Count active agents
-          const activeAgents = agents.filter(a => a.status === 'working').length;
-
-          // Get recent transitions (sorted by last modified)
-          const recentTransitions = projects
-            .slice()
-            .sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified))
-            .slice(0, 5)
-            .map(p => ({
-              project: p.name,
-              to: p.phase,
-              time: p.lastModified
-            }));
+          if (Array.isArray(queueData)) {
+            queueData.forEach(file => {
+              if (file?.tasks) {
+                if (file.last_updated && file.tasks.length === 0) {
+                  // Empty file, skip
+                  return;
+                }
+                // Categorize based on file name if available
+                if (file.version) {
+                  // It's a queue file, check which one
+                  if (file.tasks.every(t => t.status === 'completed' || t.completed)) {
+                    completed = [...completed, ...file.tasks];
+                  } else if (file.tasks.every(t => t.agent || t.claimed)) {
+                    claimed = [...claimed, ...file.tasks];
+                  } else {
+                    backlog = [...backlog, ...file.tasks];
+                  }
+                }
+              }
+            });
+          }
 
           setData({
-            phaseCounts,
-            activeAgents,
-            recentTransitions
+            backlog,
+            claimed,
+            completed,
+            stats: {
+              backlogCount: backlog.length,
+              claimedCount: claimed.length,
+              completedCount: completed.length
+            }
           });
           setLastUpdate(new Date());
           setError(null);

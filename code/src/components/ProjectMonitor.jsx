@@ -1,10 +1,10 @@
 import { useProjects } from '../hooks/useProjects';
-import { StatusBadge, Panel, MetricCard } from './StatusBadge';
+import { StatusBadge, Panel } from './StatusBadge';
 import { formatDate, formatTokens } from '../utils/formatters';
 import { calculateCost } from '../utils/constants';
 import { formatCurrency } from '../utils/formatters';
 
-export function ProjectMonitor() {
+export function ProjectMonitor({ selectedProject, onSelectProject }) {
   const { projects, loading, error } = useProjects();
 
   // Sort by priority (lower number = higher priority), then by last modified
@@ -23,7 +23,7 @@ export function ProjectMonitor() {
       case 'fix':
         return <span className="w-2 h-2 rounded-full bg-status-error animate-pulse-slow" />;
       case 'complete':
-        return <span className="w-2 h-2 rounded-full bg-status-complete" />;
+        return <span className="w-2 h-2 rounded-full bg-status-active" />;
       default:
         return <span className="w-2 h-2 rounded-full bg-status-idle" />;
     }
@@ -31,44 +31,52 @@ export function ProjectMonitor() {
 
   return (
     <Panel title="Projects" loading={loading} error={error} className="h-full">
-      <div className="space-y-3 max-h-[300px] overflow-y-auto">
+      <div className="space-y-2 overflow-y-auto h-full pr-1">
         {sortedProjects.length === 0 && !loading && (
           <div className="text-mission-muted text-sm text-center py-4">
             No projects found
           </div>
         )}
-        {sortedProjects.map((project) => (
-          <div 
-            key={project.name}
-            className="bg-mission-bg/50 rounded-lg p-3 border border-mission-border/50 hover:border-mission-border transition-colors"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                {getStatusIndicator(project.phase)}
-                <span className="font-medium text-mission-text text-sm">
-                  {project.name}
-                </span>
+        {sortedProjects.map((project) => {
+          const isSelected = selectedProject?.name === project.name;
+          return (
+            <div 
+              key={project.name}
+              onClick={() => onSelectProject(isSelected ? null : project)}
+              className={`rounded-lg p-3 border cursor-pointer transition-all ${
+                isSelected 
+                  ? 'bg-mission-border/40 border-status-active' 
+                  : 'bg-mission-bg/50 border-mission-border/50 hover:border-mission-border'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  {getStatusIndicator(project.phase)}
+                  <span className="font-medium text-mission-text text-sm truncate">
+                    {project.name}
+                  </span>
+                </div>
+                <StatusBadge phase={project.phase}>
+                  {project.phase}
+                </StatusBadge>
               </div>
-              <StatusBadge phase={project.phase}>
-                {project.phase}
-              </StatusBadge>
-            </div>
-            <div className="flex items-center justify-between text-xs text-mission-muted">
-              <span>Priority: {project.priority}</span>
-              <span>{formatDate(project.lastModified)}</span>
-            </div>
-            {project.tokens && (
-              <div className="mt-2 pt-2 border-t border-mission-border/30 flex items-center justify-between text-xs">
-                <span className="text-mission-muted">
-                  {formatTokens(project.tokens.input + project.tokens.output)} tokens
-                </span>
-                <span className="text-status-active">
-                  {formatCurrency(calculateCost(project.tokens.input, project.tokens.output))}
-                </span>
+              <div className="flex items-center justify-between text-xs text-mission-muted">
+                <span>P: {project.priority}</span>
+                <span>{formatDate(project.lastModified)}</span>
               </div>
-            )}
-          </div>
-        ))}
+              {project.tokens && (
+                <div className="mt-2 pt-2 border-t border-mission-border/30 flex items-center justify-between text-xs">
+                  <span className="text-mission-muted">
+                    {formatTokens((project.tokens.input || 0) + (project.tokens.output || 0))} tok
+                  </span>
+                  <span className="text-status-active">
+                    {formatCurrency(calculateCost(project.tokens.input || 0, project.tokens.output || 0))}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </Panel>
   );

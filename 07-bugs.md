@@ -1,29 +1,49 @@
-## UI Feedback Round - 2026-02-05T23:31:00Z
+## Bug - Agent Name Display
 
-### Agent Status Panel (High Priority)
-1. **Larger font size** - currently too small
-2. **Resize horizontally** - make it narrower like a left sidebar panel, not a square box
-3. **Fix active light** - status indicator not working correctly
-4. **Show agent activity** - add text to right of each agent showing what they're working on:
-   - "idle" when not working
-   - "fixing x" when working on something
-   - "building y", "testing z", etc.
+**Reported:** 2026-02-05T19:10:00Z  
+**Severity:** Medium (visual bug)
 
-### Layout Changes
-5. **Agent Reports position** - move to the left when Agents panel is sized down
-   - Agents panel on left (narrow sidebar)
-   - Agent Reports next to it
+### Issue
+Builder status light turned yellow (correct - showing active), but the name/tag text next to it is being overwritten/incorrect. Should display just "Builder".
 
-### Token Monitor (Critical)
-6. **Token count not working** - still not displaying actual token usage data
-   - Should aggregate and show real token counts from memory files
+### Expected
+- Name: "Builder"
+- Status: Yellow indicator (active)
+- Clean, readable text
 
-### General
-7. **More relevant data** - identify what other data would be useful and add it
+### Actual  
+- Name text appears to be overwritten/garbled
+- Status indicator works correctly
 
-### Status
-- Agent Reports panel: looks good ✓
-- Everything else: great ✓
+### Fix
+Ensure agent name displays cleanly without text corruption or overwriting.
 
-**Assigned to:** Ed
-**Priority:** High (token count critical, agent status high)
+---
+
+## Existing Improvements (from 08-improvements.md)
+
+### Projects Box
+1. **Make projects selectable** - Updates Token box with project-specific info
+2. **Alignment fix** - Extend lower boxes to match 1080p layout
+
+### Token Box
+3. **Convert to list/table view** - Reduce clutter
+4. **Project-specific tracking** - Per selected project
+5. **Persistent counter/totalizer**
+
+### Queue Panel
+6. **Actually track data**
+
+### Agent Window
+7. **Fix active status display** - Show working vs idle
+8. **Show current task** - "idle", "fixing X", etc.
+9. **Fix name display** ← NEW: Builder name overwritten
+
+### System Time
+10. **Live updating** - Every second
+
+### Agent Reports
+11. **Adjustable window** - Draggable divider
+
+### Layout
+12. **1080p optimization** - Fix alignment

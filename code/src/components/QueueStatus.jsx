@@ -1,48 +1,67 @@
 import { useQueue } from '../hooks/useQueue';
-import { Panel, MetricCard } from './StatusBadge';
+import { Panel } from './StatusBadge';
 
 export function QueueStatus() {
-  const { phaseCounts, activeAgents, recentTransitions, loading, error } = useQueue();
-
-  const phaseOrder = ['plan', 'implement', 'build', 'test', 'fix', 'complete'];
+  const { backlog, claimed, completed, stats, loading, error } = useQueue();
 
   return (
     <Panel title="Queue" loading={loading} error={error} className="h-full">
-      {/* Phase counts */}
+      {/* Stats */}
       <div className="grid grid-cols-3 gap-2 mb-3">
-        {phaseOrder.map(phase => (
-          <div key={phase} className="bg-mission-bg/50 rounded p-2 text-center">
-            <div className="text-lg font-mono font-semibold text-mission-text">
-              {phaseCounts[phase] || 0}
-            </div>
-            <div className="text-[10px] text-mission-muted uppercase">{phase}</div>
+        <div className="bg-mission-bg/50 rounded p-2 text-center">
+          <div className="text-lg font-mono font-semibold text-mission-text">
+            {stats.backlogCount}
           </div>
-        ))}
-      </div>
-
-      {/* Active agents */}
-      <div className="flex items-center justify-between py-2 border-t border-mission-border/30">
-        <span className="text-xs text-mission-muted">Active Agents</span>
-        <span className="text-sm font-mono font-semibold text-status-working">
-          {activeAgents}
-        </span>
-      </div>
-
-      {/* Recent transitions */}
-      {recentTransitions.length > 0 && (
-        <div className="mt-2 pt-2 border-t border-mission-border/30">
-          <div className="text-[10px] text-mission-muted uppercase mb-1">Recent</div>
-          <div className="space-y-1">
-            {recentTransitions.slice(0, 3).map((t, idx) => (
-              <div key={idx} className="flex items-center gap-2 text-xs">
-                <span className="text-mission-muted">{t.project}</span>
-                <span className="text-[10px] text-mission-muted">→</span>
-                <span className="text-status-active">{t.to}</span>
-              </div>
-            ))}
-          </div>
+          <div className="text-[10px] text-mission-muted uppercase">Backlog</div>
         </div>
-      )}
+        <div className="bg-mission-bg/50 rounded p-2 text-center">
+          <div className="text-lg font-mono font-semibold text-status-working">
+            {stats.claimedCount}
+          </div>
+          <div className="text-[10px] text-mission-muted uppercase">Active</div>
+        </div>
+        <div className="bg-mission-bg/50 rounded p-2 text-center">
+          <div className="text-lg font-mono font-semibold text-status-active">
+            {stats.completedCount}
+          </div>
+          <div className="text-[10px] text-mission-muted uppercase">Done</div>
+        </div>
+      </div>
+
+      {/* Recent items */}
+      <div className="space-y-2">
+        {backlog.length > 0 && (
+          <div>
+            <div className="text-[10px] text-mission-muted uppercase mb-1">Backlog</div>
+            <div className="space-y-1">
+              {backlog.slice(0, 2).map((item, idx) => (
+                <div key={idx} className="text-xs text-mission-text truncate bg-mission-bg/30 rounded px-2 py-1">
+                  {item.title || item.name || `Task ${idx + 1}`}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {claimed.length > 0 && (
+          <div>
+            <div className="text-[10px] text-status-working uppercase mb-1">Active</div>
+            <div className="space-y-1">
+              {claimed.slice(0, 2).map((item, idx) => (
+                <div key={idx} className="text-xs text-mission-text truncate bg-mission-bg/30 rounded px-2 py-1">
+                  {item.agent && <span className="text-status-working">{item.agent}:</span>} {item.title || item.name || `Task ${idx + 1}`}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {backlog.length === 0 && claimed.length === 0 && completed.length === 0 && !loading && (
+          <div className="text-mission-muted text-xs text-center py-4">
+            Queue empty
+          </div>
+        )}
+      </div>
     </Panel>
   );
 }

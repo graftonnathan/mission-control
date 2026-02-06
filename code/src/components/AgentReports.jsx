@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useReports } from '../hooks/useReports';
 import { Panel } from './StatusBadge';
 import { formatDate, formatTime } from '../utils/formatters';
@@ -6,6 +6,9 @@ import { formatDate, formatTime } from '../utils/formatters';
 export function AgentReports() {
   const { reports, loading, error } = useReports();
   const [selectedReport, setSelectedReport] = useState(null);
+  const [dividerPosition, setDividerPosition] = useState(33); // 33% for list
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef(null);
 
   const getReportIcon = (type) => {
     switch (type) {
@@ -52,11 +55,39 @@ export function AgentReports() {
     }
   };
 
+  // Handle drag for resizable divider
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const newPosition = ((e.clientX - rect.left) / rect.width) * 100;
+      // Clamp between 20% and 60%
+      setDividerPosition(Math.max(20, Math.min(60, newPosition)));
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
   return (
     <Panel title="Agent Reports" loading={loading} error={error} className="h-full">
-      <div className="flex gap-4 h-[400px]">
-        {/* Report List */}
-        <div className="w-1/3 overflow-y-auto border-r border-mission-border/50 pr-2">
+      <div ref={containerRef} className="flex h-full gap-0">
+        {/* Report List - resizable */}
+        <div 
+          className="overflow-y-auto border-r border-mission-border/50 pr-2"
+          style={{ width: `${dividerPosition}%` }}
+        >
           {reports.length === 0 && !loading && (
             <div className="text-mission-muted text-sm text-center py-4">
               No recent reports
@@ -92,8 +123,28 @@ export function AgentReports() {
           </div>
         </div>
 
-        {/* Report Content */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Resizable Divider */}
+        <div
+          className={`w-1 cursor-col-resize flex-shrink-0 mx-1 relative group ${
+            isDragging ? 'bg-status-active' : 'hover:bg-mission-border'
+          }`}
+          onMouseDown={() => setIsDragging(true)}
+          title="Drag to resize"
+        >
+          <div className={`absolute inset-y-0 -left-1 -right-1 ${isDragging ? 'bg-status-active/20' : ''}`} />
+          {/* Visual grip indicator */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-0.5 opacity-50 group-hover:opacity-100">
+            <div className="w-0.5 h-1 bg-mission-muted rounded-full" />
+            <div className="w-0.5 h-1 bg-mission-muted rounded-full" />
+            <div className="w-0.5 h-1 bg-mission-muted rounded-full" />
+          </div>
+        </div>
+
+        {/* Report Content - fills remaining space */}
+        <div 
+          className="flex-1 overflow-y-auto pl-2"
+          style={{ width: `${100 - dividerPosition - 2}%` }}
+        >
           {selectedReport ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b border-mission-border/50 pb-2">
