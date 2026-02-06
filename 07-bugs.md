@@ -194,6 +194,21 @@ Recent Activity panel is only displaying a single entry instead of a running lis
 
 ---
 
+## Bug - Top Panel Height Wrong Direction
+
+**Reported:** 2026-02-05T20:05:00Z  
+**Fixed:** 2026-02-05T20:06:00Z  
+**Severity:** High (visual/layout)  
+**Status:** ✅ FIXED
+
+### Issue
+The top row panel height was decreased from 420px to 200px instead of keeping/increasing it. The panels became too short and cramped.
+
+### Fix
+Restored top row height to 420px to give the Agent Status and Agent Reports panels adequate vertical space.
+
+---
+
 ## All Bugs Resolved
 
 All reported bugs have been addressed:
@@ -205,4 +220,5 @@ All reported bugs have been addressed:
 6. ✅ Live Log height now flexible
 7. ✅ Live Log scrollbar visible
 8. ✅ Recent Activity shows full history
+9. ✅ Top panel height restored (420px)
 
