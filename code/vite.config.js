@@ -12,13 +12,26 @@ const TOKEN_USAGE_FILE = path.join(WORKSPACE_ROOT, 'token-usage.json');
 
 // Start token tracking polling (every 30 seconds)
 let tokenPollInterval = null;
+let trackTokensRunning = false;
 function startTokenPolling() {
   // Run immediately on startup
   trackTokens();
   
   // Then poll every 30 seconds
   tokenPollInterval = setInterval(() => {
-    trackTokens();
+    // Prevent overlapping executions that could cause memory spikes
+    if (trackTokensRunning) {
+      console.log('[TokenTracker] Previous run still in progress, skipping...');
+      return;
+    }
+    trackTokensRunning = true;
+    try {
+      trackTokens();
+    } catch (err) {
+      console.error('[TokenTracker] Error in tracking:', err.message);
+    } finally {
+      trackTokensRunning = false;
+    }
   }, 30000);
   
   console.log('[TokenTracker] Polling started - every 30 seconds');
@@ -219,9 +232,10 @@ function trackTokens() {
     for (const file of files) {
       try {
         const stats = fs.statSync(file);
-        // Skip files larger than 100MB to avoid memory issues
-        if (stats.size > 100 * 1024 * 1024) {
-          console.warn(`[TokenTracker] Skipping large file: ${path.basename(file)}`);
+        // Skip files larger than 50MB to avoid memory issues
+        // Reduced from 100MB to prevent crashes during agent spawns
+        if (stats.size > 50 * 1024 * 1024) {
+          console.warn(`[TokenTracker] Skipping large file: ${path.basename(file)} (${(stats.size / 1024 / 1024).toFixed(1)}MB)`);
           continue;
         }
 
@@ -1207,6 +1221,18 @@ function workspaceApiMiddleware() {
           clearInterval(tokenPollInterval);
           console.log('[TokenTracker] Polling stopped');
         }
+      });
+      
+      // Global error handlers to prevent crashes
+      process.on('uncaughtException', (err) => {
+        console.error('[Server] Uncaught Exception:', err.message);
+        console.error(err.stack);
+        // Don't exit - let the server continue running
+      });
+      
+      process.on('unhandledRejection', (reason, promise) => {
+        console.error('[Server] Unhandled Rejection at:', promise, 'reason:', reason);
+        // Don't exit - let the server continue running
       });
       
       // Start token tracking polling when server starts
