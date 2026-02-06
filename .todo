@@ -1,0 +1,16 @@
+# Punch List for mission-control - MISSING ITEMS TO IMPLEMENT
+# Verified by Ed recovery check - 2026-02-06
+
+## CONFIRMED MISSING (6 items) - Priority Order:
+
+[PENDING] **1. Add button in popup broken** - CRITICAL - Form submits but task not created
+[PENDING] **2. Restart button for projects** - No restart functionality exists in ProjectMonitor.jsx
+[PENDING] **3. Backend status indicators** - No PM2/PID/port monitoring in vite.config.js
+[PENDING] **4. Horizontal project cards** - Projects still vertical list, not horizontal cards
+[PENDING] **5. Log + Activity combined column** - They are separate panels, need to be stacked
+[PENDING] **6. Softer text color** - Still #e0e0ff, should be #a0a0b0 per design
+
+## WORKING (verified):
+# - Movable windows (drag-drop) ✅
+# - Punch list modal styling ✅ 
+# - Project tabs with counts ✅

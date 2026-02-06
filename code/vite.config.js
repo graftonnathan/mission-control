@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import fs from 'fs'
 import path from 'path'
+import { exec } from 'child_process'
 
 const WORKSPACE_ROOT = '/home/molten/.openclaw/workspace';
 const ACTIVITY_HISTORY_FILE = path.join(WORKSPACE_ROOT, 'mission-control-activity.json');
@@ -370,7 +371,9 @@ function workspaceApiMiddleware() {
       });
       // GET /api/projects - list all projects
       server.middlewares.use('/api/projects', (req, res, next) => {
+        // Only handle exact /api/projects or /api/projects?query, not /api/projects/something
         if (req.method !== 'GET') return next();
+        if (req.url !== '/' && !req.url.startsWith('?')) return next();
         
         const projectsDir = path.join(WORKSPACE_ROOT, 'PROJECTS');
         const entries = readDir(projectsDir);
@@ -385,6 +388,8 @@ function workspaceApiMiddleware() {
             
             const phase = readFile(phaseFile)?.trim() || 'unknown';
             const priority = parseInt(readFile(priorityFile)?.trim() || '5', 10);
+            const blockedFile = path.join(projectPath, '05-blocked');
+            const blocked = fs.existsSync(blockedFile);
             const tokensData = readFile(tokensFile);
             const tokens = tokensData ? JSON.parse(tokensData) : null;
             
@@ -394,6 +399,7 @@ function workspaceApiMiddleware() {
               name: e.name,
               phase,
               priority,
+              blocked,
               lastModified: stats.mtime,
               tokens
             };
@@ -440,30 +446,25 @@ function workspaceApiMiddleware() {
       server.middlewares.use('/api/agents', (req, res, next) => {
         if (req.method !== 'GET') return next();
         
-        const agentsDir = path.join(WORKSPACE_ROOT, 'AGENTS');
-        const entries = readDir(agentsDir);
+        // Look for AGENTS.md files in workspace-* directories
+        const workspaceDirs = readDir(WORKSPACE_ROOT)
+          .filter(e => e.isDirectory() && e.name.startsWith('workspace-'));
         
-        const agents = entries
-          .filter(e => e.isFile() && e.name.endsWith('.md'))
-          .map(e => {
-            const agentId = e.name.replace('.md', '');
-            const content = readFile(path.join(agentsDir, e.name)) || '';
+        const agents = workspaceDirs
+          .map(dir => {
+            const agentId = dir.name.replace('workspace-', '');
+            const agentFile = path.join(WORKSPACE_ROOT, dir.name, 'AGENTS.md');
+            const content = readFile(agentFile) || '';
             
             // Extract name from first line (assuming # Agent Name format)
             const nameMatch = content.match(/^#\s+(.+)$/m);
             let name = agentId;
             if (nameMatch) {
-              // Handle formats like "AGENTS/Ed.md - Ed Agent Profile" or "Builder - Builder Agent"
               name = nameMatch[1]
-                .replace(/^AGENTS\//, '')           // Remove AGENTS/ prefix
-                .replace(/\.md\s*/, ' ')            // Remove .md and add space
-                .replace(/\s*-\s*.*Agent Profile.*$/, '')  // Remove " - ... Agent Profile" suffix
-                .replace(/\s*Agent Profile.*$/, '')  // Remove "Agent Profile" suffix
+                .replace(/^AGENTS\.md\s*-\s*/, '')  // Remove "AGENTS.md - " prefix
+                .replace(/\s*Agent.*$/, '')          // Remove "Agent" suffix
                 .trim();
-              // If result is empty or just the filename, use agentId
-              if (!name || name === agentId.toLowerCase()) {
-                name = agentId;
-              }
+              if (!name) name = agentId;
             }
             
             // Check if agent is working
@@ -507,45 +508,95 @@ function workspaceApiMiddleware() {
         res.end(JSON.stringify(queue));
       });
 
-      // GET /api/reports - list recent reports from memory
+      // GET /api/reports - list recent reports from EXCHANGE/reports
       server.middlewares.use('/api/reports', (req, res, next) => {
         if (req.method !== 'GET') return next();
         
-        const memoryDir = path.join(WORKSPACE_ROOT, 'memory');
-        const entries = readDir(memoryDir);
+        const exchangeReportsDir = path.join(WORKSPACE_ROOT, 'EXCHANGE', 'reports');
         
-        // Get recent memory files with actual content
-        const reports = entries
-          .filter(e => e.isFile() && e.name.endsWith('.md'))
-          .map(e => {
-            const filePath = path.join(memoryDir, e.name);
-            const content = readFile(filePath) || '';
-            const stats = fs.statSync(filePath);
-            
-            // Determine agent from filename or content
-            let agent = 'system';
-            const agentMatch = e.name.match(/^(\w+)-/);
-            if (agentMatch) agent = agentMatch[1];
-            
-            // Determine type from content
-            let type = 'status';
-            if (content.includes('error') || content.includes('fail')) type = 'error';
-            else if (content.includes('complete') || content.includes('success')) type = 'complete';
-            else if (content.includes('working') || content.includes('progress')) type = 'working';
-            
-            // Extract first meaningful line for preview
-            const lines = content.split('\n').filter(l => l.trim());
-            const preview = lines.slice(0, 10).join('\n');
-            
-            return {
-              filename: e.name,
-              timestamp: stats.mtime,
-              type: type,
-              agent: agent.charAt(0).toUpperCase() + agent.slice(1),
-              content: content,
-              preview: preview
-            };
-          })
+        // Also check memory as fallback
+        const memoryDir = path.join(WORKSPACE_ROOT, 'memory');
+        
+        let allReports = [];
+        
+        // Read from EXCHANGE/reports
+        if (fs.existsSync(exchangeReportsDir)) {
+          const exchangeEntries = readDir(exchangeReportsDir);
+          const exchangeReports = exchangeEntries
+            .filter(e => e.isFile() && e.name.endsWith('.md'))
+            .map(e => {
+              const filePath = path.join(exchangeReportsDir, e.name);
+              const content = readFile(filePath) || '';
+              const stats = fs.statSync(filePath);
+              
+              // Determine agent from filename (ed-*, marcus-*, etc.)
+              let agent = 'system';
+              const agentMatch = e.name.match(/^(\w+)-/);
+              if (agentMatch) agent = agentMatch[1];
+              
+              // Determine type from content
+              let type = 'status';
+              if (content.includes('error') || content.includes('fail')) type = 'error';
+              else if (content.includes('complete') || content.includes('success') || content.includes('Fixed') || content.includes('Done')) type = 'complete';
+              else if (content.includes('working') || content.includes('progress') || content.includes('Build')) type = 'working';
+              
+              // Extract first meaningful line for preview
+              const lines = content.split('\n').filter(l => l.trim());
+              const preview = lines.slice(0, 10).join('\n');
+              
+              return {
+                filename: e.name,
+                timestamp: stats.mtime,
+                type: type,
+                agent: agent.charAt(0).toUpperCase() + agent.slice(1),
+                content: content,
+                preview: preview,
+                source: 'exchange'
+              };
+            });
+          allReports = allReports.concat(exchangeReports);
+        }
+        
+        // Read from memory as fallback
+        if (fs.existsSync(memoryDir)) {
+          const memoryEntries = readDir(memoryDir);
+          const memoryReports = memoryEntries
+            .filter(e => e.isFile() && e.name.endsWith('.md'))
+            .map(e => {
+              const filePath = path.join(memoryDir, e.name);
+              const content = readFile(filePath) || '';
+              const stats = fs.statSync(filePath);
+              
+              // Determine agent from filename or content
+              let agent = 'system';
+              const agentMatch = e.name.match(/^(\w+)-/);
+              if (agentMatch) agent = agentMatch[1];
+              
+              // Determine type from content
+              let type = 'status';
+              if (content.includes('error') || content.includes('fail')) type = 'error';
+              else if (content.includes('complete') || content.includes('success')) type = 'complete';
+              else if (content.includes('working') || content.includes('progress')) type = 'working';
+              
+              // Extract first meaningful line for preview
+              const lines = content.split('\n').filter(l => l.trim());
+              const preview = lines.slice(0, 10).join('\n');
+              
+              return {
+                filename: e.name,
+                timestamp: stats.mtime,
+                type: type,
+                agent: agent.charAt(0).toUpperCase() + agent.slice(1),
+                content: content,
+                preview: preview,
+                source: 'memory'
+              };
+            });
+          allReports = allReports.concat(memoryReports);
+        }
+        
+        // Sort by timestamp and take latest 20
+        const reports = allReports
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
           .slice(0, 20);
         
@@ -634,6 +685,386 @@ function workspaceApiMiddleware() {
         }
         
         next();
+      });
+
+      // POST /api/projects/:name/restart - restart project backend
+      server.middlewares.use('/api/projects', (req, res, next) => {
+        const match = req.url.match(/^\/([^\/]+)\/restart$/);
+        if (!match) return next();
+        
+        const projectName = decodeURIComponent(match[1]);
+        
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+        
+        try {
+          const projectDir = path.join(WORKSPACE_ROOT, 'PROJECTS', projectName);
+          const codeDir = path.join(projectDir, 'code');
+          
+          if (!fs.existsSync(projectDir)) {
+            res.statusCode = 404;
+            res.end(JSON.stringify({ error: 'Project not found' }));
+            return;
+          }
+          
+          // Check for project-specific restart script
+          const restartScript = path.join(projectDir, 'restart.sh');
+          
+          if (fs.existsSync(restartScript)) {
+            exec(`bash "${restartScript}"`, { cwd: projectDir }, (error, stdout, stderr) => {
+              if (error) {
+                console.error(`[API] Restart script error for ${projectName}:`, error);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: 'Restart script failed', details: error.message }));
+                return;
+              }
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: true, project: projectName, message: 'Restart script executed' }));
+            });
+          } else {
+            // Generic restart - check if there's a start.sh
+            const startScript = path.join(codeDir, 'start.sh');
+            
+            if (fs.existsSync(startScript)) {
+              exec(`bash "${startScript}"`, { cwd: codeDir }, (error) => {
+                if (error) {
+                  res.statusCode = 500;
+                  res.end(JSON.stringify({ error: 'Start script failed', details: error.message }));
+                  return;
+                }
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: true, project: projectName, message: 'Start script executed' }));
+              });
+            } else {
+              res.statusCode = 404;
+              res.end(JSON.stringify({ error: 'No restart mechanism found for this project' }));
+            }
+          }
+        } catch (e) {
+          console.error('[API] Error restarting project:', e);
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: 'Failed to restart project' }));
+        }
+      });
+
+      // GET /api/projects/:name/status - check project backend status
+      server.middlewares.use('/api/projects', (req, res, next) => {
+        const match = req.url.match(/^\/([^\/]+)\/status$/);
+        if (!match) return next();
+        
+        const projectName = decodeURIComponent(match[1]);
+        
+        if (req.method !== 'GET') {
+          res.statusCode = 405;
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+        
+        try {
+          const projectDir = path.join(WORKSPACE_ROOT, 'PROJECTS', projectName);
+          const codeDir = path.join(projectDir, 'code');
+          
+          if (!fs.existsSync(projectDir)) {
+            res.statusCode = 404;
+            res.end(JSON.stringify({ error: 'Project not found' }));
+            return;
+          }
+          
+          // Check for backend process
+          
+          const pm2Config = path.join(codeDir, 'backend', 'ecosystem.config.js');
+          const startScript = path.join(codeDir, 'start.sh');
+          const backendDir = path.join(codeDir, 'backend');
+          const pidFile = path.join(codeDir, 'backend', '.backend.pid');
+          const packageJson = path.join(codeDir, 'package.json');
+          
+          let checkCommand;
+          let checkType = 'none';
+          
+          if (fs.existsSync(pm2Config)) {
+            checkType = 'pm2';
+            checkCommand = `pm2 describe ${projectName}-api 2>/dev/null || pm2 describe ecosystem 2>/dev/null`;
+          } else if (fs.existsSync(pidFile)) {
+            checkType = 'pid';
+            const pid = fs.readFileSync(pidFile, 'utf-8').trim();
+            checkCommand = `kill -0 ${pid} 2>/dev/null && echo "running" || echo "stopped"`;
+          } else if (fs.existsSync(startScript) || fs.existsSync(backendDir) || fs.existsSync(packageJson)) {
+            checkType = 'port';
+            // Check if anything is listening on port 8000 (backend) or 5173 (frontend/vite)
+            // For mission-control specifically, check if port 5173 is being listened to
+            if (projectName === 'mission-control') {
+              checkCommand = `lsof -i :5173 2>/dev/null | grep -q "LISTEN" && echo "running" || echo "stopped"`;
+            } else {
+              checkCommand = `ss -tuln 2>/dev/null | grep ':8000' || lsof -i :8000 2>/dev/null | grep LISTEN`;
+            }
+          } else {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ 
+              project: projectName, 
+              status: 'none',
+              running: false,
+              message: 'No backend configured'
+            }));
+            return;
+          }
+          
+          exec(checkCommand, (error, stdout, stderr) => {
+            let isRunning = false;
+            
+            if (checkType === 'pm2') {
+              isRunning = stdout.includes('online') && !stdout.includes('errored') && !stdout.includes('stopped');
+            } else if (checkType === 'pid') {
+              isRunning = stdout.trim() === 'running';
+            } else if (checkType === 'port') {
+              // For port check, if we got any output, something is listening
+              // For mission-control, stdout will be "running" or "stopped"
+              if (projectName === 'mission-control') {
+                isRunning = stdout.trim() === 'running';
+              } else {
+                isRunning = stdout.length > 0 && (stdout.includes('8000') || stdout.includes('LISTEN'));
+              }
+            }
+            
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ 
+              project: projectName, 
+              status: isRunning ? 'running' : 'stopped',
+              running: isRunning,
+              message: isRunning ? 'Backend is running' : 'Backend is down'
+            }));
+          });
+        } catch (e) {
+          console.error('[API] Error checking project status:', e);
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: 'Failed to check project status' }));
+        }
+      });
+
+      // POST /api/projects/:name/phase - set project phase
+      server.middlewares.use('/api/projects', (req, res, next) => {
+        const match = req.url.match(/^\/([^\/]+)\/phase$/);
+        if (!match) return next();
+        
+        const projectName = decodeURIComponent(match[1]);
+        
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+        
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+          try {
+            const { phase } = JSON.parse(body);
+            const projectDir = path.join(WORKSPACE_ROOT, 'PROJECTS', projectName);
+            const phaseFile = path.join(projectDir, '04-phase');
+            
+            if (!fs.existsSync(projectDir)) {
+              res.statusCode = 404;
+              res.end(JSON.stringify({ error: 'Project not found' }));
+              return;
+            }
+            
+            fs.writeFileSync(phaseFile, phase);
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, project: projectName, phase }));
+          } catch (e) {
+            console.error('[API] Error setting project phase:', e);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: 'Failed to set project phase' }));
+          }
+        });
+      });
+
+      // POST /api/projects/:name/blocked - set project blocked status
+      server.middlewares.use('/api/projects', (req, res, next) => {
+        const match = req.url.match(/^\/([^\/]+)\/blocked$/);
+        if (!match) return next();
+        
+        const projectName = decodeURIComponent(match[1]);
+        
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+        
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+          try {
+            const { blocked } = JSON.parse(body);
+            const projectDir = path.join(WORKSPACE_ROOT, 'PROJECTS', projectName);
+            const blockedFile = path.join(projectDir, '05-blocked');
+            
+            if (!fs.existsSync(projectDir)) {
+              res.statusCode = 404;
+              res.end(JSON.stringify({ error: 'Project not found' }));
+              return;
+            }
+            
+            if (blocked) {
+              fs.writeFileSync(blockedFile, 'true');
+            } else {
+              if (fs.existsSync(blockedFile)) {
+                fs.unlinkSync(blockedFile);
+              }
+            }
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, project: projectName, blocked }));
+          } catch (e) {
+            console.error('[API] Error setting project blocked:', e);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: 'Failed to set project blocked status' }));
+          }
+        });
+      });
+      
+      // EXCHANGE Task Queue APIs
+      const EXCHANGE_ROOT = path.join(WORKSPACE_ROOT, 'EXCHANGE');
+      const QUEUE_DIRS = {
+        pending: path.join(EXCHANGE_ROOT, 'queue', 'pending'),
+        active: path.join(EXCHANGE_ROOT, 'queue', 'active'),
+        done: path.join(EXCHANGE_ROOT, 'queue', 'done')
+      };
+      const TASKS_DIR = path.join(EXCHANGE_ROOT, 'tasks');
+
+      // GET /api/exchange/tasks - list all tasks
+      server.middlewares.use('/api/exchange/tasks', (req, res, next) => {
+        if (req.method !== 'GET') return next();
+        
+        try {
+          const { project, status } = req.url.includes('?') ? Object.fromEntries(new URLSearchParams(req.url.split('?')[1])) : {};
+          
+          let tasks = [];
+          
+          // Read from all queue directories
+          for (const [queueStatus, dirPath] of Object.entries(QUEUE_DIRS)) {
+            if (status && status !== queueStatus) continue;
+            
+            const entries = readDir(dirPath);
+            for (const entry of entries) {
+              if (entry.isFile() && entry.name.endsWith('.json')) {
+                const content = readFile(path.join(dirPath, entry.name));
+                if (content) {
+                  const task = JSON.parse(content);
+                  task.queueStatus = queueStatus;
+                  if (!project || task.project === project) {
+                    tasks.push(task);
+                  }
+                }
+              }
+            }
+          }
+          
+          // Sort by priority, then created date
+          tasks.sort((a, b) => {
+            if (a.priority !== b.priority) return a.priority - b.priority;
+            return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+          });
+          
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(tasks));
+        } catch (e) {
+          console.error('[API] Error reading tasks:', e);
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: 'Failed to read tasks' }));
+        }
+      });
+
+      // POST /api/exchange/tasks - create new task
+      server.middlewares.use('/api/exchange/tasks', (req, res, next) => {
+        if (req.method !== 'POST') return next();
+        
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+          try {
+            const taskData = JSON.parse(body);
+            const taskId = `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
+            const task = {
+              id: taskId,
+              project: taskData.project,
+              title: taskData.title,
+              description: taskData.description || '',
+              type: 'fix',
+              priority: 5,
+              status: 'pending',
+              createdBy: taskData.createdBy || 'marcus',
+              createdAt: new Date().toISOString(),
+              claimedBy: null,
+              claimedAt: null,
+              completedAt: null,
+              reportRef: null
+            };
+            
+            // Save to tasks dir and pending queue
+            const taskPath = path.join(TASKS_DIR, `${taskId}.json`);
+            const pendingPath = path.join(QUEUE_DIRS.pending, `${taskId}.json`);
+            
+            fs.writeFileSync(taskPath, JSON.stringify(task, null, 2));
+            fs.writeFileSync(pendingPath, JSON.stringify(task, null, 2));
+            
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, task }));
+          } catch (e) {
+            console.error('[API] Error creating task:', e);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: 'Failed to create task' }));
+          }
+        });
+      });
+
+      // DELETE /api/exchange/tasks/:id - delete/cancel a task
+      server.middlewares.use('/api/exchange/tasks/', (req, res, next) => {
+        if (req.method !== 'DELETE') return next();
+        
+        // req.url will be like "/task-id" since middleware is mounted at "/api/exchange/tasks/"
+        const taskId = decodeURIComponent(req.url.replace(/^\//, '').split('?')[0]);
+        if (!taskId) {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ error: 'Task ID required' }));
+          return;
+        }
+        
+        try {
+          let deleted = false;
+          
+          // Remove from all queue locations
+          for (const dirPath of Object.values(QUEUE_DIRS)) {
+            const filePath = path.join(dirPath, `${taskId}.json`);
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+              deleted = true;
+            }
+          }
+          
+          // Remove from tasks dir
+          const tasksPath = path.join(TASKS_DIR, `${taskId}.json`);
+          if (fs.existsSync(tasksPath)) {
+            fs.unlinkSync(tasksPath);
+            deleted = true;
+          }
+          
+          if (!deleted) {
+            res.statusCode = 404;
+            res.end(JSON.stringify({ error: 'Task not found' }));
+            return;
+          }
+          
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: true, deleted: true }));
+        } catch (e) {
+          console.error('[API] Error deleting task:', e);
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: 'Failed to delete task' }));
+        }
       });
       
       // Start token tracking polling when server starts

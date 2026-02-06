@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { scanProjects } from '../utils/fileApi';
 import { POLL_INTERVALS } from '../utils/constants';
 
@@ -8,10 +8,24 @@ export function useProjects() {
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
 
+  const loadProjects = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await scanProjects();
+      setProjects(data || []);
+      setLastUpdate(new Date());
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
-    const loadProjects = async () => {
+    const fetchProjects = async () => {
       try {
         const data = await scanProjects();
         if (isMounted) {
@@ -30,8 +44,8 @@ export function useProjects() {
       }
     };
 
-    loadProjects();
-    const interval = setInterval(loadProjects, POLL_INTERVALS.PROJECTS);
+    fetchProjects();
+    const interval = setInterval(fetchProjects, POLL_INTERVALS.PROJECTS);
 
     return () => {
       isMounted = false;
@@ -39,5 +53,5 @@ export function useProjects() {
     };
   }, []);
 
-  return { projects, loading, error, lastUpdate };
+  return { projects, loading, error, lastUpdate, refresh: loadProjects };
 }

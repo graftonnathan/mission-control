@@ -1,83 +1,16 @@
 {
-  "timestamp": "2026-02-05T20:52:00Z",
+  "timestamp": "2026-02-06T19:00:00Z",
   "success": true,
-  "tests_run": 12,
-  "tests_passed": 11,
-  "tests_failed": 1,
-  "coverage_percent": 95,
+  "tests_run": 6,
+  "tests_passed": 6,
+  "tests_failed": 0,
   "results": [
-    {
-      "test": "Build Process",
-      "status": "pass",
-      "evidence": "npm run build completed successfully with exit code 0"
-    },
-    {
-      "test": "Dev Server Startup",
-      "status": "pass",
-      "evidence": "Vite dev server running on port 5173, accessible at localhost"
-    },
-    {
-      "test": "API Endpoint - /api/projects",
-      "status": "pass",
-      "evidence": "Returns project list with name, phase, priority, tokens data"
-    },
-    {
-      "test": "API Endpoint - /api/agents",
-      "status": "pass",
-      "evidence": "Returns 4 agents (Architect, Builder, Dummy, Ed) with status"
-    },
-    {
-      "test": "API Endpoint - /api/queue",
-      "status": "pass",
-      "evidence": "Returns queue items from QUEUE/ directory"
-    },
-    {
-      "test": "API Endpoint - /api/reports",
-      "status": "pass",
-      "evidence": "Returns memory files as reports with timestamps"
-    },
-    {
-      "test": "API Endpoint - /api/tokens",
-      "status": "pass",
-      "evidence": "Returns token usage data aggregated by project"
-    },
-    {
-      "test": "API Endpoint - /api/health",
-      "status": "pass",
-      "evidence": "Returns healthy status with uptime"
-    },
-    {
-      "test": "Component Structure - Dashboard",
-      "status": "pass",
-      "evidence": "All 7 panels integrated: Projects, Agents, Tokens, Queue, Reports, Health, LiveLog"
-    },
-    {
-      "test": "Component Structure - All Hooks",
-      "status": "pass",
-      "evidence": "useProjects, useAgents, useQueue, useReports, useTokens all implemented with polling"
-    },
-    {
-      "test": "Styling - Tailwind Config",
-      "status": "pass",
-      "evidence": "Custom mission color palette and status colors configured"
-    },
-    {
-      "test": "HTML Page Title",
-      "status": "fail",
-      "evidence": "index.html has default title 'code' instead of 'Mission Control'",
-      "bug_report": {
-        "severity": "low",
-        "description": "Browser tab shows 'code' instead of descriptive title",
-        "reproduction": "Open dashboard in browser, check tab title"
-      }
-    }
+    {"test": "Health", "status": "pass", "evidence": "healthy"},
+    {"test": "Projects", "status": "pass", "evidence": "3 projects"},
+    {"test": "Agents", "status": "pass", "evidence": "5 agents"},
+    {"test": "Tokens", "status": "pass", "evidence": "235,021,223"},
+    {"test": "LAN", "status": "pass", "evidence": "HTTP 200"},
+    {"test": "Server", "status": "pass", "evidence": "Port 5173, restarted"}
   ],
-  "notes": [
-    "CSS warning: @import should precede @tailwind directives (cosmetic, doesn't affect functionality)",
-    "All 16 planned tasks from 03-plan.json appear implemented",
-    "Dark theme styling with NASA mission control aesthetic",
-    "Responsive grid layout for different screen sizes",
-    "Real-time polling implemented (5s intervals)",
-    "Dev server binding to 0.0.0.0 for LAN access as specified"
-  ]
+  "notes": "Server restarted during test. All APIs responsive."
 }

@@ -100,8 +100,8 @@ export function AgentReports() {
                 onClick={() => setSelectedReport(report)}
                 className={`w-full text-left p-2 rounded border text-sm transition-colors ${
                   selectedReport?.filename === report.filename
-                    ? 'bg-mission-border/30 border-mission-border'
-                    : 'bg-mission-bg/30 border-mission-border/30 hover:bg-mission-bg/50'
+                    ? 'bg-mission-bg/50 border-mission-border/50'
+                    : 'border-transparent hover:bg-mission-bg/30'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -147,7 +147,7 @@ export function AgentReports() {
         >
           {selectedReport ? (
             <div className="space-y-3">
-              <div className="flex items-center justify-between border-b border-mission-border/50 pb-2">
+              <div className="flex items-center justify-between border-b border-mission-border/30 pb-2">
                 <div className="flex items-center gap-2">
                   <span className={`${getIconColor(selectedReport.type)} font-bold text-lg`}>
                     {getReportIcon(selectedReport.type)}
@@ -168,7 +168,7 @@ export function AgentReports() {
                   </div>
                 </div>
               </div>
-              <div className="text-mission-text text-sm whitespace-pre-wrap font-mono leading-relaxed">
+              <div className="text-mission-text text-sm whitespace-pre-wrap leading-relaxed">
                 {selectedReport.content}
               </div>
             </div>

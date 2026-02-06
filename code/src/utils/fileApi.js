@@ -66,3 +66,132 @@ export async function getTokenData() {
 export async function getSystemHealth() {
   return fetchApi('/health');
 }
+
+/**
+ * Get EXCHANGE queue tasks
+ */
+export async function getExchangeTasks(project, status) {
+  let url = '/api/exchange/tasks';
+  const params = new URLSearchParams();
+  if (project) params.append('project', project);
+  if (status) params.append('status', status);
+  if (params.toString()) url += `?${params.toString()}`;
+  
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch exchange tasks:', error);
+    return [];
+  }
+}
+
+/**
+ * Create a new task in EXCHANGE queue
+ */
+export async function createExchangeTask(taskData) {
+  try {
+    const response = await fetch('/api/exchange/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(taskData)
+    });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to create task:', error);
+    return null;
+  }
+}
+
+/**
+ * Delete/cancel a task
+ */
+export async function deleteExchangeTask(taskId) {
+  try {
+    const response = await fetch(`/api/exchange/tasks/${encodeURIComponent(taskId)}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to delete task:', error);
+    return null;
+  }
+}
+
+/**
+ * Set project phase
+ */
+export async function setProjectPhase(project, phase) {
+  try {
+    const response = await fetch(`/api/projects/${encodeURIComponent(project)}/phase`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phase })
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Failed to set phase for ${project}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Set project blocked status
+ */
+export async function setProjectBlocked(project, blocked) {
+  try {
+    const response = await fetch(`/api/projects/${encodeURIComponent(project)}/blocked`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blocked })
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Failed to set blocked for ${project}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Restart project backend
+ */
+export async function restartProject(project) {
+  try {
+    const response = await fetch(`/api/projects/${encodeURIComponent(project)}/restart`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Failed to restart ${project}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Get project backend status
+ */
+export async function getProjectStatus(project) {
+  try {
+    const response = await fetch(`/api/projects/${encodeURIComponent(project)}/status`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Failed to get status for ${project}:`, error);
+    return null;
+  }
+}
