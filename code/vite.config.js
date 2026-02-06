@@ -533,10 +533,30 @@ function workspaceApiMiddleware() {
       server.middlewares.use('/api/tokens', (req, res, next) => {
         if (req.method !== 'GET') return next();
 
-        // Return tracked token usage
-        const tokenData = readTokenUsage();
+        // Read real token usage from token-usage.json
+        const usageData = readTokenUsage();
+        
+        // Transform to format expected by useTokens.js
+        const tokens = Object.entries(usageData.projects || {}).map(([name, data]) => {
+          // Calculate cost from token counts
+          const inputTokens = data.input || 0;
+          const outputTokens = data.output || 0;
+          const inputCost = (inputTokens / 1000) * 0.01;   // $0.01 per 1K input tokens
+          const outputCost = (outputTokens / 1000) * 0.03; // $0.03 per 1K output tokens
+          const totalCost = inputCost + outputCost;
+          
+          return {
+            name,
+            inputTokens,
+            outputTokens,
+            estimatedCost: totalCost,
+            actualCost: totalCost,
+            lastUpdated: usageData.lastUpdated
+          };
+        });
+        
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(tokenData));
+        res.end(JSON.stringify(tokens));
       });
 
       // GET /api/health - system health
@@ -609,6 +629,9 @@ function workspaceApiMiddleware() {
         
         next();
       });
+      
+      // Start token tracking polling when server starts
+      startTokenPolling();
     }
   };
 }
