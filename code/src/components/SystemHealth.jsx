@@ -1,4 +1,3 @@
-import { useProjects } from '../hooks/useProjects';
 import { useActivityHistory } from '../hooks/useActivityHistory';
 import { Panel } from './StatusBadge';
 
@@ -13,15 +12,12 @@ function formatTimeShort(isoString) {
 }
 
 export function SystemHealth() {
-  const { projects, loading, error } = useProjects();
-  const { history, loading: historyLoading } = useActivityHistory(projects);
-
-  const isLoading = loading || historyLoading;
+  const { history, loading, error } = useActivityHistory();
 
   return (
-    <Panel title="Recent Activity" loading={isLoading} error={error} className="h-full" flexContent>
+    <Panel title="Recent Activity" loading={loading} error={error} className="h-full" flexContent>
       <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar">
-        {history.length === 0 && !isLoading && (
+        {history.length === 0 && !loading && (
           <div className="text-mission-muted/60 text-xs text-center py-8">
             No activity yet
           </div>

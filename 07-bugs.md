@@ -166,7 +166,7 @@ Live Log panel does not have a visible scrollbar. Users cannot scroll through lo
 ## Bug - Recent Activity Shows Only One Entry
 
 **Reported:** 2026-02-05T19:59:00Z  
-**Fixed:** 2026-02-05T20:00:00Z  
+**Fixed:** 2026-02-05T20:10:00Z  
 **Severity:** High (core functionality)  
 **Status:** ✅ FIXED
 
@@ -184,11 +184,13 @@ Recent Activity panel is only displaying a single entry instead of a running lis
 - History is not being accumulated
 
 ### Fix Applied
-- Created new hook `useActivityHistory.js` that tracks all project phase changes
-- History persists to localStorage (mission-control-activity-history)
-- Displays as scrollable list with format: "project-name: old → new at HH:MM"
-- Max 100 entries, newest first
-- SystemHealth.jsx now uses useActivityHistory hook
+- Created server-side activity tracking in vite.config.js
+- Activity history stored in `mission-control-activity.json` in workspace root
+- Automatic phase change detection when /api/projects is called
+- GET /api/activity endpoint to retrieve history
+- Updated useActivityHistory hook to use API instead of localStorage
+- History persists across server restarts and browser sessions
+- Maximum 100 entries (configurable)
 
 ---
 
@@ -201,4 +203,6 @@ All reported bugs have been addressed:
 4. ✅ Agent Status working correctly (no active agents at test time)
 5. ✅ Queue reporting correctly (queue is empty)
 6. ✅ Live Log height now flexible
+7. ✅ Live Log scrollbar visible
+8. ✅ Recent Activity shows full history
 
