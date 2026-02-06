@@ -1,11 +1,11 @@
 {
-  "timestamp": "2025-02-05T20:21:00Z",
+  "timestamp": "2025-02-05T20:38:00Z",
   "success": true,
-  "duration_ms": 818,
+  "duration_ms": 830,
   "command": "npm run build",
   "exit_code": 0,
-  "stdout": "vite v5.4.21 building for production...\\ntransforming...\\n✓ 51 modules transformed.\\nrendering chunks...\\ncomputing gzip size...\\ndist/index.html                   0.47 kB │ gzip:  0.31 kB\\ndist/assets/index-4LmQfOHt.css   15.21 kB │ gzip:  3.89 kB\\ndist/assets/index-CcACpQta.js   166.50 kB │ gzip: 51.30 kB\\n✓ built in 818ms",
+  "stdout": "vite v5.4.21 building for production...\\ntransforming...\\n✓ 51 modules transformed.\\nrendering chunks...\\ncomputing gzip size...\\ndist/index.html                   0.47 kB │ gzip:  0.30 kB\\ndist/assets/index-efme3ba_.css   15.40 kB │ gzip:  3.94 kB\\ndist/assets/index-DHlTZcII.js   166.59 kB │ gzip: 51.38 kB\\n✓ built in 830ms",
   "stderr": "",
   "errors": [],
-  "summary": "Build complete. All 16 tasks finished. 51 modules transformed. Ready for review."
+  "summary": "Build complete. 51 modules transformed. Ready for review."
 }
