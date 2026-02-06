@@ -33,27 +33,19 @@ export function useQueue() {
           if (Array.isArray(queueData)) {
             queueData.forEach(file => {
               if (file?.tasks && Array.isArray(file.tasks)) {
-                // Categorize based on filename
-                const filename = file.filename || '';
-                if (filename.includes('backlog')) {
-                  backlog = [...backlog, ...file.tasks];
-                } else if (filename.includes('claimed')) {
-                  claimed = [...claimed, ...file.tasks];
-                } else if (filename.includes('completed') || filename.includes('done')) {
-                  completed = [...completed, ...file.tasks];
-                } else {
-                  // Default: categorize by task status if filename doesn't match
-                  const allCompleted = file.tasks.every(t => t.status === 'completed' || t.completed);
-                  const allClaimed = file.tasks.every(t => t.agent || t.claimed);
+                // Categorize each task by its status property
+                file.tasks.forEach(task => {
+                  const status = task.status?.toLowerCase() || 'ready';
                   
-                  if (allCompleted) {
-                    completed = [...completed, ...file.tasks];
-                  } else if (allClaimed) {
-                    claimed = [...claimed, ...file.tasks];
+                  if (status === 'completed' || status === 'done') {
+                    completed.push(task);
+                  } else if (status === 'claimed' || status === 'in_progress' || status === 'active' || task.agent) {
+                    claimed.push(task);
                   } else {
-                    backlog = [...backlog, ...file.tasks];
+                    // backlog, ready, blocked, pending, etc.
+                    backlog.push(task);
                   }
-                }
+                });
               }
             });
           }
