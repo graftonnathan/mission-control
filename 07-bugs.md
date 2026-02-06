@@ -368,6 +368,28 @@ Log panel scrollbar is still not visible or not working. User cannot scroll thro
 
 ---
 
+## Bug - Top Panel Height Adjust (-100px)
+
+**Reported:** 2026-02-05T20:23:00Z  
+**Fixed:** 2026-02-05T20:23:00Z  
+**Severity:** Medium (layout)  
+**Status:** ✅ FIXED
+
+### Issue
+Top row panel height needs to be reduced by 100px. Current height (620px) is too tall.
+
+### Expected
+- Reduce top row height by 100px (from 620px to ~520px)
+- Better balance between top and bottom panels
+
+### Actual
+- Height is 620px, user wants it shorter
+
+### Fix Applied
+- Updated `Dashboard.jsx` top row height from 620px to 520px
+
+---
+
 ## All Bugs Resolved
 
 All reported bugs have been addressed:

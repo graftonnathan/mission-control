@@ -46,7 +46,7 @@ export function Dashboard() {
       {/* Main Content - Flex layout for 1080p optimization */}
       <div className="flex-1 flex flex-col gap-4 min-h-0">
         {/* Top Row: Agent Status (narrow sidebar) + Agent Reports (fills remaining) */}
-        <div className="flex flex-col lg:flex-row gap-4 flex-shrink-0" style={{ height: '620px' }}>
+        <div className="flex flex-col lg:flex-row gap-4 flex-shrink-0" style={{ height: '520px' }}>
           {/* Agent Status - narrow sidebar */}
           <div className="w-full lg:w-56 flex-shrink-0 h-full">
             <AgentStatus />
