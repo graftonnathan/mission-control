@@ -48,16 +48,10 @@ Centralized task queue for coordinating work between agents.
 **Queue Operations:**
 - View pending, active, and completed tasks
 - Create new tasks with priority
-
-![Add Task Modal](./screenshots/design-review-10-add-task.png)
-
-**Task Creation:**
-- Select project from dropdown
-- Set priority level
-- Add detailed description
-- Auto-assigns to appropriate agent
 - Assign tasks to specific agents
 - Track task lifecycle from claim to completion
+
+![Add Task Modal](./screenshots/design-review-10-add-task.png)
 
 ### 📑 Agent Reports
 Access recent reports from all agents in one place.
