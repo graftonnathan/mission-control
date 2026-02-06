@@ -418,19 +418,8 @@ function workspaceApiMiddleware() {
   return {
     name: 'workspace-api',
     configureServer(server) {
-      // Start token tracking on server start
-      console.log('[Server] Starting token tracker...');
-      trackTokens();
-
-      // Poll token tracker every 30 seconds
-      const tokenTrackerInterval = setInterval(() => {
-        trackTokens();
-      }, 30000);
-
-      // Clean up on server close
-      server.httpServer?.on('close', () => {
-        clearInterval(tokenTrackerInterval);
-      });
+      // Token tracking is started by startTokenPolling() at the end of configureServer
+      // Cleanup is handled in the server close handler below
       // GET /api/projects - list all projects
       server.middlewares.use('/api/projects', (req, res, next) => {
         // Only handle exact /api/projects or /api/projects?query, not /api/projects/something
@@ -1209,6 +1198,14 @@ function workspaceApiMiddleware() {
           console.error('[API] Error deleting task:', e);
           res.statusCode = 500;
           res.end(JSON.stringify({ error: 'Failed to delete task' }));
+        }
+      });
+      
+      // Clean up token polling on server close
+      server.httpServer?.on('close', () => {
+        if (tokenPollInterval) {
+          clearInterval(tokenPollInterval);
+          console.log('[TokenTracker] Polling stopped');
         }
       });
       
