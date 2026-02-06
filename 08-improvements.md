@@ -84,6 +84,25 @@ Totalize actual token usage:
 
 ---
 
+## UI Polish - Round 6
+**Priority:** Medium  
+**Status:** ✅ COMPLETED
+
+### Live Log Rename
+✅ DONE - Panel title changed from "Live Log" to "Log" (cleaner, simpler).
+
+### Recent Activity Enhancement
+✅ DONE - Converted Recent Activity from single-entry display to a running list:
+- Track all project phase transitions
+- Show timestamp + "project: old → new phase"
+- Persist history to localStorage
+- Display as scrollable list with custom scrollbar styling
+
+### Layout Adjustment
+✅ DONE - Top window bubbles (top row panels) height: set to 200px
+
+---
+
 **Previous Round - Assigned to:** Ed
 **Previous Round - Completed:** 2026-02-05
 **Previous Round - Commit:** 4346e4c

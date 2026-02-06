@@ -142,6 +142,56 @@ When the Agent Status panel width was increased (lg:w-48 → lg:w-56), the Live 
 
 ---
 
+## Bug - Live Log Missing Scrollbar
+
+**Reported:** 2026-02-05T19:59:00Z  
+**Fixed:** 2026-02-05T20:00:00Z  
+**Severity:** Medium (usability)  
+**Status:** ✅ FIXED
+
+### Issue
+Live Log panel does not have a visible scrollbar. Users cannot scroll through log history.
+
+### Expected
+- Visible scrollbar matching the dark theme
+- Scrollable log content area
+
+### Fix Applied
+- Added `custom-scrollbar` class to LiveLog scrollable content area
+- Added custom scrollbar CSS with matching dark theme styling
+- Scrollbar is now 6px wide with subtle track and visible thumb
+
+---
+
+## Bug - Recent Activity Shows Only One Entry
+
+**Reported:** 2026-02-05T19:59:00Z  
+**Fixed:** 2026-02-05T20:00:00Z  
+**Severity:** High (core functionality)  
+**Status:** ✅ FIXED
+
+### Issue
+Recent Activity panel is only displaying a single entry instead of a running list of project state changes.
+
+### Expected
+- Keep a history of all project state transitions (plan → implement → build → test → fix → review → complete)
+- Display as a chronological list with timestamps
+- Show: "mission-control: build → review at 19:44"
+- List should persist and grow over time
+
+### Actual
+- Only shows one (the most recent) entry
+- History is not being accumulated
+
+### Fix Applied
+- Created new hook `useActivityHistory.js` that tracks all project phase changes
+- History persists to localStorage (mission-control-activity-history)
+- Displays as scrollable list with format: "project-name: old → new at HH:MM"
+- Max 100 entries, newest first
+- SystemHealth.jsx now uses useActivityHistory hook
+
+---
+
 ## All Bugs Resolved
 
 All reported bugs have been addressed:

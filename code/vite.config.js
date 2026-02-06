@@ -4,6 +4,55 @@ import fs from 'fs'
 import path from 'path'
 
 const WORKSPACE_ROOT = '/home/molten/.openclaw/workspace';
+const ACTIVITY_HISTORY_FILE = path.join(WORKSPACE_ROOT, 'mission-control-activity.json');
+const MAX_ACTIVITY_ENTRIES = 100;
+
+// Activity history tracking
+let lastProjectPhases = new Map();
+
+function readActivityHistory() {
+  try {
+    const content = fs.readFileSync(ACTIVITY_HISTORY_FILE, 'utf-8');
+    return JSON.parse(content);
+  } catch (e) {
+    return [];
+  }
+}
+
+function writeActivityHistory(history) {
+  try {
+    fs.writeFileSync(ACTIVITY_HISTORY_FILE, JSON.stringify(history, null, 2));
+  } catch (e) {
+    console.error('Failed to write activity history:', e);
+  }
+}
+
+function detectPhaseChanges(projects) {
+  const changes = [];
+  
+  projects.forEach(project => {
+    const lastPhase = lastProjectPhases.get(project.name);
+    if (lastPhase && lastPhase !== project.phase) {
+      changes.push({
+        id: `${Date.now()}-${project.name}`,
+        project: project.name,
+        oldPhase: lastPhase,
+        newPhase: project.phase,
+        timestamp: new Date().toISOString()
+      });
+    }
+    lastProjectPhases.set(project.name, project.phase);
+  });
+  
+  // Also handle projects that were removed (optional)
+  lastProjectPhases.forEach((phase, name) => {
+    if (!projects.find(p => p.name === name)) {
+      lastProjectPhases.delete(name);
+    }
+  });
+  
+  return changes;
+}
 
 // Helper to read directory contents
 function readDir(dirPath) {
@@ -317,6 +366,67 @@ function workspaceApiMiddleware() {
         
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify(events));
+      });
+
+      // GET /api/activity - project activity history
+      server.middlewares.use('/api/activity', (req, res, next) => {
+        if (req.method === 'GET') {
+          const history = readActivityHistory();
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(history));
+          return;
+        }
+        
+        if (req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => body += chunk);
+          req.on('end', () => {
+            try {
+              const entry = JSON.parse(body);
+              const history = readActivityHistory();
+              history.unshift(entry);
+              if (history.length > MAX_ACTIVITY_ENTRIES) {
+                history.length = MAX_ACTIVITY_ENTRIES;
+              }
+              writeActivityHistory(history);
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: true }));
+            } catch (e) {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: 'Invalid JSON' }));
+            }
+          });
+          return;
+        }
+        
+        next();
+      });
+
+      // Detect and record phase changes when projects are fetched
+      server.middlewares.use('/api/projects', (req, res, next) => {
+        if (req.method !== 'GET') return next();
+        
+        // Capture original end function
+        const originalEnd = res.end;
+        res.end = function(data) {
+          try {
+            const projects = JSON.parse(data);
+            const changes = detectPhaseChanges(projects);
+            if (changes.length > 0) {
+              const history = readActivityHistory();
+              history.unshift(...changes);
+              if (history.length > MAX_ACTIVITY_ENTRIES) {
+                history.length = MAX_ACTIVITY_ENTRIES;
+              }
+              writeActivityHistory(history);
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+          originalEnd.call(this, data);
+        };
+        
+        next();
       });
     }
   };

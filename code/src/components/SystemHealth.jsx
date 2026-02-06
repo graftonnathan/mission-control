@@ -1,40 +1,57 @@
 import { useProjects } from '../hooks/useProjects';
+import { useActivityHistory } from '../hooks/useActivityHistory';
 import { Panel } from './StatusBadge';
-import { formatTime } from '../utils/formatters';
+
+function formatTimeShort(isoString) {
+  if (!isoString) return '--:--';
+  const date = new Date(isoString);
+  return date.toLocaleTimeString('en-US', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
 
 export function SystemHealth() {
   const { projects, loading, error } = useProjects();
+  const { history, loading: historyLoading } = useActivityHistory(projects);
 
-  // Get recent phase changes (projects sorted by last modified)
-  const recentActivity = projects
-    .slice()
-    .sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified))
-    .slice(0, 5);
+  const isLoading = loading || historyLoading;
 
   return (
-    <Panel title="Recent Activity" loading={loading} error={error} className="h-full" flexContent>
-      <div className="flex-1 overflow-y-auto min-h-0 space-y-2">
-        {recentActivity.length === 0 && !loading && (
-          <div className="text-mission-muted text-xs text-center py-4">
-            No recent activity
+    <Panel title="Recent Activity" loading={isLoading} error={error} className="h-full" flexContent>
+      <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar">
+        {history.length === 0 && !isLoading && (
+          <div className="text-mission-muted/60 text-xs text-center py-8">
+            No activity yet
           </div>
         )}
-        {recentActivity.map((project) => (
-          <div 
-            key={project.name}
-            className="flex items-center justify-between py-1.5 border-b border-mission-border/20 last:border-0"
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-mission-text">{project.name}</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded bg-mission-bg`}>
-                {project.phase}
-              </span>
+        <div className="space-y-1">
+          {history.map((entry) => (
+            <div 
+              key={entry.id}
+              className="py-1.5 px-2 rounded bg-mission-bg/30 hover:bg-mission-bg/50 transition-colors"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-mission-text truncate flex-1">
+                  {entry.project}
+                </span>
+                <span className="text-[10px] text-mission-muted whitespace-nowrap">
+                  {formatTimeShort(entry.timestamp)}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded bg-mission-panel text-mission-muted`}>
+                  {entry.oldPhase}
+                </span>
+                <span className="text-[10px] text-mission-muted">→</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded bg-mission-panel text-mission-text`}>
+                  {entry.newPhase}
+                </span>
+              </div>
             </div>
-            <span className="text-[10px] text-mission-muted">
-              {formatTime(project.lastModified)}
-            </span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </Panel>
   );
