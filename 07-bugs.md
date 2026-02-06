@@ -1,7 +1,9 @@
 ## Bug - Agent Name Display
 
 **Reported:** 2026-02-05T19:10:00Z  
-**Severity:** Medium (visual bug)
+**Fixed:** 2025-02-05T19:15:00Z  
+**Severity:** Medium (visual bug)  
+**Status:** ✅ FIXED
 
 ### Issue
 Builder status light turned yellow (correct - showing active), but the name/tag text next to it is being overwritten/incorrect. Should display just "Builder".
@@ -16,7 +18,9 @@ Builder status light turned yellow (correct - showing active), but the name/tag 
 - Status indicator works correctly
 
 ### Fix
-Ensure agent name displays cleanly without text corruption or overwriting.
+- Changed agent name container from `min-w-0 truncate` to fixed `w-20 flex-shrink-0` to prevent text overlap
+- Updated formatAgentName() to handle edge cases and already-clean names
+- Activity text now uses `flex-1 text-right` for proper alignment
 
 ---
 

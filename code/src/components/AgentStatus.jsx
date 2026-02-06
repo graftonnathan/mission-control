@@ -18,15 +18,23 @@ export function AgentStatus() {
 
   // Extract just the agent name from various formats
   const formatAgentName = (name) => {
-    if (!name) return 'Unknown';
-    // Handle formats like "AGENTS/Ed.md - Ed Agent Profile (File-State Edition)"
+    if (!name || typeof name !== 'string') return 'Unknown';
+    
+    // If name is already clean (no path, no suffix), return as-is
+    if (!name.includes('/') && !name.includes('Agent Profile')) {
+      return name.trim();
+    }
+    
+    // Handle formats like "AGENTS/Ed.md" or full titles
     const match = name.match(/([^/\s]+)\.md/);
     if (match) return match[1];
-    // Fallback: strip common suffixes
+    
+    // Strip common suffixes and prefixes
     return name
       .replace(/^AGENTS\//, '')
       .replace(/\.md$/, '')
-      .replace(/\s*-.*$/, '')
+      .replace(/\s*-\s*Ed Agent Profile.*$/, '')
+      .replace(/\s*Agent Profile.*$/, '')
       .trim();
   };
 
@@ -66,13 +74,13 @@ export function AgentStatus() {
               )}
             </div>
             
-            {/* Agent Name - larger font */}
-            <div className="text-sm font-medium text-mission-text truncate leading-tight min-w-0">
+            {/* Agent Name - fixed width, no truncation issues */}
+            <div className="text-sm font-medium text-mission-text leading-tight w-20 flex-shrink-0">
               {formatAgentName(agent.name)}
             </div>
             
             {/* Activity Text - shows what agent is doing */}
-            <div className="text-xs text-mission-muted truncate ml-auto flex-shrink-0">
+            <div className="text-xs text-mission-muted truncate flex-1 text-right">
               {formatActivity(agent)}
             </div>
           </div>
