@@ -3,6 +3,7 @@
  * 
  * Reads session transcript files from agents/main/sessions/*.jsonl
  * Extracts token usage from each message and aggregates per project
+ * Also writes per-project 09-tokens.json files
  */
 
 import fs from 'fs';
@@ -10,6 +11,7 @@ import path from 'path';
 
 const SESSIONS_DIR = '/home/molten/.openclaw/agents/main/sessions';
 const OUTPUT_FILE = '/home/molten/.openclaw/workspace/token-usage.json';
+const PROJECTS_DIR = '/home/molten/.openclaw/workspace/PROJECTS';
 
 /**
  * Read all session files and extract token usage
@@ -17,6 +19,9 @@ const OUTPUT_FILE = '/home/molten/.openclaw/workspace/token-usage.json';
 export function trackTokens() {
   const projects = {};
   let grandTotal = { input: 0, output: 0, total: 0 };
+  
+  // Track detailed per-project data for 09-tokens.json
+  const projectDetails = {};
   
   try {
     // Get all .jsonl files (excluding .lock files)
@@ -38,6 +43,9 @@ export function trackTokens() {
         
         let sessionCwd = null;
         let sessionProject = null;
+        let sessionAgent = null;
+        let sessionPhase = null;
+        let sessionTimestamp = null;
         
         for (const line of lines) {
           try {
@@ -47,6 +55,22 @@ export function trackTokens() {
             if (entry.type === 'session' && entry.cwd) {
               sessionCwd = entry.cwd;
               sessionProject = extractProjectFromPath(sessionCwd);
+              sessionTimestamp = entry.timestamp || new Date().toISOString();
+              
+              // Try to extract agent and phase from context
+              if (entry.agent) {
+                sessionAgent = entry.agent;
+              }
+            }
+            
+            // Extract agent from context if available
+            if (entry.type === 'context' && entry.projectContext) {
+              if (entry.projectContext.agent) {
+                sessionAgent = entry.projectContext.agent;
+              }
+              if (entry.projectContext.phase) {
+                sessionPhase = entry.projectContext.phase;
+              }
             }
             
             // Extract usage from message entries - FILTER for actual API calls only
@@ -78,7 +102,7 @@ export function trackTokens() {
               // cacheRead is returned but not billed
               const input = usage.input || 0;
               const output = usage.output || 0;
-              const total = input + output; // Don't use totalTokens as it may include cache
+              const total = input + output;
               
               // Determine project for this message
               const project = sessionProject || 'unknown';
@@ -97,6 +121,61 @@ export function trackTokens() {
               grandTotal.input += input;
               grandTotal.output += output;
               grandTotal.total += total;
+              
+              // Track detailed data for 09-tokens.json
+              if (!projectDetails[project]) {
+                projectDetails[project] = {
+                  sessions: [],
+                  by_phase: {},
+                  firstTimestamp: sessionTimestamp,
+                  lastTimestamp: sessionTimestamp
+                };
+              }
+              
+              // Track session data
+              const existingSession = projectDetails[project].sessions.find(
+                s => s.session_file === path.basename(file)
+              );
+              
+              if (existingSession) {
+                existingSession.input_tokens += input;
+                existingSession.output_tokens += output;
+                existingSession.total_tokens += total;
+              } else {
+                projectDetails[project].sessions.push({
+                  session_file: path.basename(file),
+                  agent: sessionAgent || 'unknown',
+                  phase: sessionPhase || 'unknown',
+                  timestamp: sessionTimestamp,
+                  input_tokens: input,
+                  output_tokens: output,
+                  total_tokens: total,
+                  model: msg.model || 'unknown'
+                });
+              }
+              
+              // Track by phase
+              const phase = sessionPhase || 'unknown';
+              if (!projectDetails[project].by_phase[phase]) {
+                projectDetails[project].by_phase[phase] = {
+                  input: 0,
+                  output: 0,
+                  total: 0
+                };
+              }
+              projectDetails[project].by_phase[phase].input += input;
+              projectDetails[project].by_phase[phase].output += output;
+              projectDetails[project].by_phase[phase].total += total;
+              
+              // Update timestamps
+              if (sessionTimestamp) {
+                if (sessionTimestamp < projectDetails[project].firstTimestamp) {
+                  projectDetails[project].firstTimestamp = sessionTimestamp;
+                }
+                if (sessionTimestamp > projectDetails[project].lastTimestamp) {
+                  projectDetails[project].lastTimestamp = sessionTimestamp;
+                }
+              }
             }
           } catch (e) {
             // Skip malformed lines
@@ -114,8 +193,11 @@ export function trackTokens() {
       lastUpdated: new Date().toISOString()
     };
     
-    // Write to output file
+    // Write to central output file
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(result, null, 2));
+    
+    // Write per-project 09-tokens.json files
+    writePerProjectTokenFiles(projects, projectDetails);
     
     console.log(`[TokenTracker] Tracked ${Object.keys(projects).length} projects, ${grandTotal.total.toLocaleString()} total tokens`);
     return result;
@@ -123,6 +205,49 @@ export function trackTokens() {
   } catch (e) {
     console.error('[TokenTracker] Error tracking tokens:', e.message);
     return null;
+  }
+}
+
+/**
+ * Write per-project 09-tokens.json files
+ */
+function writePerProjectTokenFiles(projects, projectDetails) {
+  for (const [projectName, totals] of Object.entries(projects)) {
+    try {
+      const projectDir = path.join(PROJECTS_DIR, projectName);
+      
+      // Check if project directory exists
+      if (!fs.existsSync(projectDir)) {
+        console.warn(`[TokenTracker] Project directory not found: ${projectDir}`);
+        continue;
+      }
+      
+      const details = projectDetails[projectName] || { sessions: [], by_phase: {} };
+      
+      // Calculate estimated cost (rough estimate: $0.50 per 1M input tokens, $1.50 per 1M output tokens)
+      const inputCost = (totals.input / 1000000) * 0.50;
+      const outputCost = (totals.output / 1000000) * 1.50;
+      const estimatedCost = inputCost + outputCost;
+      
+      const tokenData = {
+        project: projectName,
+        created_at: details.firstTimestamp || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        total_input_tokens: totals.input,
+        total_output_tokens: totals.output,
+        total_tokens: totals.total,
+        estimated_cost_usd: parseFloat(estimatedCost.toFixed(2)),
+        actual_cost_usd: 0, // Will be updated if actual billing data available
+        sessions: details.sessions || [],
+        by_phase: details.by_phase || {}
+      };
+      
+      const tokenFile = path.join(projectDir, '09-tokens.json');
+      fs.writeFileSync(tokenFile, JSON.stringify(tokenData, null, 2));
+      console.log(`[TokenTracker] Updated ${projectName}/09-tokens.json: ${totals.total.toLocaleString()} tokens`);
+    } catch (e) {
+      console.error(`[TokenTracker] Error writing token file for ${projectName}:`, e.message);
+    }
   }
 }
 
@@ -177,6 +302,47 @@ export function readTokenUsage() {
       grandTotal: { input: 0, output: 0, total: 0 },
       lastUpdated: new Date().toISOString()
     };
+  }
+}
+
+/**
+ * Initialize token file for a project (for projects without session data yet)
+ */
+export function initializeProjectTokenFile(projectName) {
+  try {
+    const projectDir = path.join(PROJECTS_DIR, projectName);
+    
+    if (!fs.existsSync(projectDir)) {
+      console.warn(`[TokenTracker] Project directory not found: ${projectDir}`);
+      return false;
+    }
+    
+    const tokenFile = path.join(projectDir, '09-tokens.json');
+    
+    // Don't overwrite existing file
+    if (fs.existsSync(tokenFile)) {
+      return true;
+    }
+    
+    const tokenData = {
+      project: projectName,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      total_input_tokens: 0,
+      total_output_tokens: 0,
+      total_tokens: 0,
+      estimated_cost_usd: 0,
+      actual_cost_usd: 0,
+      sessions: [],
+      by_phase: {}
+    };
+    
+    fs.writeFileSync(tokenFile, JSON.stringify(tokenData, null, 2));
+    console.log(`[TokenTracker] Initialized ${projectName}/09-tokens.json`);
+    return true;
+  } catch (e) {
+    console.error(`[TokenTracker] Error initializing token file for ${projectName}:`, e.message);
+    return false;
   }
 }
 
