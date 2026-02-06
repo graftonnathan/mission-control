@@ -9,6 +9,7 @@ const MAX_ACTIVITY_ENTRIES = 100;
 
 // Activity history tracking
 let lastProjectPhases = new Map();
+let isFirstLoad = true;
 
 function readActivityHistory() {
   try {
@@ -75,12 +76,29 @@ function readFile(filePath) {
 // Check if agent is currently working
 function getAgentStatus(agentId) {
   const projectsDir = path.join(WORKSPACE_ROOT, 'PROJECTS');
-  const entries = readDir(projectsDir);
   const agentIdLower = agentId.toLowerCase();
   
+  // First check workspace root for working file (current location)
+  const rootWorkingFile = path.join(WORKSPACE_ROOT, `.${agentIdLower}-working`);
+  if (fs.existsSync(rootWorkingFile)) {
+    const content = readFile(rootWorkingFile)?.trim() || '';
+    // Parse content like "Ed is working on mission-control fixes"
+    const projectMatch = content.match(/working on\s+(\S+)/i);
+    const project = projectMatch ? projectMatch[1] : 'unknown';
+    const phaseFile = path.join(projectsDir, project, '04-phase');
+    const phase = readFile(phaseFile)?.trim() || 'unknown';
+    return {
+      status: 'working',
+      project: project,
+      phase: phase,
+      task: content || `${phase} phase on ${project}`
+    };
+  }
+  
+  // Fallback: check each project folder for working file
+  const entries = readDir(projectsDir);
   for (const entry of entries) {
     if (entry.isDirectory()) {
-      // Check for agent-specific working file
       const workingFile = path.join(projectsDir, entry.name, `.${agentIdLower}-working`);
       
       if (fs.existsSync(workingFile)) {
@@ -411,17 +429,41 @@ function workspaceApiMiddleware() {
         res.end = function(data) {
           try {
             const projects = JSON.parse(data);
-            const changes = detectPhaseChanges(projects);
-            if (changes.length > 0) {
+            
+            // On first load, initialize activity history with current states
+            if (isFirstLoad) {
+              isFirstLoad = false;
               const history = readActivityHistory();
-              history.unshift(...changes);
-              if (history.length > MAX_ACTIVITY_ENTRIES) {
-                history.length = MAX_ACTIVITY_ENTRIES;
+              if (history.length === 0 && projects.length > 0) {
+                // Seed activity history with current project states
+                const initialEntries = projects.map(project => ({
+                  id: `init-${Date.now()}-${project.name}`,
+                  project: project.name,
+                  oldPhase: 'none',
+                  newPhase: project.phase,
+                  timestamp: new Date().toISOString()
+                }));
+                writeActivityHistory(initialEntries);
+                console.log(`[Activity] Initialized history with ${initialEntries.length} projects`);
               }
-              writeActivityHistory(history);
+              // Populate lastProjectPhases for future change detection
+              projects.forEach(project => {
+                lastProjectPhases.set(project.name, project.phase);
+              });
+            } else {
+              // Normal phase change detection
+              const changes = detectPhaseChanges(projects);
+              if (changes.length > 0) {
+                const history = readActivityHistory();
+                history.unshift(...changes);
+                if (history.length > MAX_ACTIVITY_ENTRIES) {
+                  history.length = MAX_ACTIVITY_ENTRIES;
+                }
+                writeActivityHistory(history);
+              }
             }
           } catch (e) {
-            // Ignore parsing errors
+            console.error('[Activity] Error processing projects:', e);
           }
           originalEnd.call(this, data);
         };

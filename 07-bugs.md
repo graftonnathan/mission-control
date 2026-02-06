@@ -194,6 +194,85 @@ Recent Activity panel is only displaying a single entry instead of a running lis
 
 ---
 
+## Bug - Agent Working Files in Wrong Location
+
+**Reported:** 2026-02-05T20:11:00Z  
+**Fixed:** 2026-02-05T20:20:00Z  
+**Severity:** High (agent status accuracy)  
+**Status:** ✅ FIXED
+
+### Issue
+Only Ed is showing as active in the dashboard, but other agents should be working too. The `.ed-working` file is in the workspace root (`/home/molten/.openclaw/workspace/.ed-working`), but the dashboard looks for working files inside each project folder (`PROJECTS/{project}/.{agent}-working`).
+
+### Expected
+- Working files should be created in the project being worked on
+- Dashboard should detect all active agents across projects
+
+### Actual
+- Working file is in wrong location
+- Dashboard only sees Ed because file exists (but in wrong place)
+
+### Fix Applied
+- Updated `getAgentStatus()` in vite.config.js to check workspace root FIRST
+- Parses working file content to extract project name and task
+- Falls back to checking project folders if not found in root
+- Dashboard now correctly detects agents working from workspace root
+
+---
+
+## Bug - Queue Only Shows 2 Backlog Items
+
+**Reported:** 2026-02-05T20:11:00Z  
+**Fixed:** 2026-02-05T20:20:00Z  
+**Severity:** Medium (data visibility)  
+**Status:** ✅ FIXED
+
+### Issue
+Queue panel shows "9" in the count but only displays 2 backlog items. The UI was slicing the array to show only first 2.
+
+### Expected
+- Show all backlog items (or at least more than 2)
+- Scrollable list if too many
+
+### Actual
+- `backlog.slice(0, 2)` was limiting display to 2 items
+- 7 other tasks were hidden
+
+### Fix Applied
+- Changed `backlog.slice(0, 2)` to `backlog.map()` to show all items
+- Added `max-h-24` and `custom-scrollbar` for scrollable lists
+- Shows counts next to section headers: "Backlog (9)"
+- Both backlog and claimed sections now scrollable
+
+---
+
+## Bug - Recent Activity Empty
+
+**Reported:** 2026-02-05T20:11:00Z  
+**Fixed:** 2026-02-05T20:20:00Z  
+**Severity:** Medium (feature not working)  
+**Status:** ✅ FIXED
+
+### Issue
+Recent Activity panel shows nothing. The activity history file (`mission-control-activity.json`) doesn't exist yet.
+
+### Expected
+- Show history of phase changes
+- Persist across server restarts
+
+### Actual
+- Empty list
+- File doesn't exist because no phase changes detected since server start
+
+### Fix Applied
+- Modified `detectPhaseChanges()` in vite.config.js to initialize on first load
+- On server start, if history is empty, seeds with current project states
+- Creates entries like "project: none → current-phase at startup"
+- `isFirstLoad` flag prevents duplicate initialization
+- History file created automatically with seeded data
+
+---
+
 ## Bug - Top Panel Height Wrong Direction
 
 **Reported:** 2026-02-05T20:05:00Z  
@@ -215,10 +294,13 @@ All reported bugs have been addressed:
 1. ✅ Text contrast fixed
 2. ✅ Agent name display fixed
 3. ✅ Agent Reports scroll restored
-4. ✅ Agent Status working correctly (no active agents at test time)
-5. ✅ Queue reporting correctly (queue is empty)
+4. ✅ Agent Status working correctly (checks workspace root + project folders)
+5. ✅ Queue reporting correctly (shows all items with scrollable lists)
 6. ✅ Live Log height now flexible
 7. ✅ Live Log scrollbar visible
-8. ✅ Recent Activity shows full history
+8. ✅ Recent Activity shows full history (initialized on first load)
 9. ✅ Top panel height restored (420px)
+10. ✅ Agent working file detection (workspace root + project folders)
+11. ✅ Queue displays all backlog items (removed slice limit)
+12. ✅ Recent Activity auto-initializes with current project states
 

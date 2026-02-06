@@ -32,9 +32,9 @@ export function QueueStatus() {
       <div className="flex-1 overflow-y-auto min-h-0 space-y-2">
         {backlog.length > 0 && (
           <div>
-            <div className="text-[10px] text-mission-muted uppercase mb-1">Backlog</div>
-            <div className="space-y-1">
-              {backlog.slice(0, 2).map((item, idx) => (
+            <div className="text-[10px] text-mission-muted uppercase mb-1">Backlog ({backlog.length})</div>
+            <div className="space-y-1 max-h-24 overflow-y-auto custom-scrollbar">
+              {backlog.map((item, idx) => (
                 <div key={idx} className="text-xs text-mission-text truncate bg-mission-bg/30 rounded px-2 py-1">
                   {item.title || item.name || `Task ${idx + 1}`}
                 </div>
@@ -45,9 +45,9 @@ export function QueueStatus() {
         
         {claimed.length > 0 && (
           <div>
-            <div className="text-[10px] text-status-working uppercase mb-1">Active</div>
-            <div className="space-y-1">
-              {claimed.slice(0, 2).map((item, idx) => (
+            <div className="text-[10px] text-status-working uppercase mb-1">Active ({claimed.length})</div>
+            <div className="space-y-1 max-h-20 overflow-y-auto custom-scrollbar">
+              {claimed.map((item, idx) => (
                 <div key={idx} className="text-xs text-mission-text truncate bg-mission-bg/30 rounded px-2 py-1">
                   {item.agent && <span className="text-status-working">{item.agent}:</span>} {item.title || item.name || `Task ${idx + 1}`}
                 </div>
