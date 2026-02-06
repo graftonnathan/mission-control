@@ -152,7 +152,7 @@ export function QueueStatus() {
       {/* Add Task Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-mission-panel rounded-lg p-6 w-[500px] border border-mission-border">
+          <div className="bg-mission-panel rounded-lg p-8 w-[700px] border border-mission-border">
             <h3 className="text-mission-text font-medium mb-4">Add Punch List Item</h3>
             <div className="mb-4 p-2 bg-mission-bg/50 rounded border border-mission-border/30">
               <span className="text-xs text-mission-muted">Project: </span>
@@ -171,7 +171,7 @@ export function QueueStatus() {
                 <textarea
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
-                  className="w-full bg-mission-bg border border-mission-border rounded px-3 py-3 text-sm text-mission-text focus:border-status-active focus:outline-none h-40 resize-none"
+                  className="w-full bg-mission-bg border border-mission-border rounded px-4 py-4 text-sm text-mission-text focus:border-status-active focus:outline-none h-64 resize-none"
                   placeholder="What needs to be done?"
                   required
                   autoFocus
