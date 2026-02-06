@@ -178,12 +178,36 @@ function trackTokens() {
               sessionProject = extractProjectFromPath(sessionCwd);
             }
 
-            // Extract usage from message entries
+            // Extract usage from message entries - FILTER for actual API calls only
             if (entry.type === 'message' && entry.message?.usage) {
-              const usage = entry.message.usage;
+              const msg = entry.message;
+              
+              // Only count assistant responses (actual API calls)
+              // Skip: user messages, tool results, system messages, thinking messages
+              if (msg.role !== 'assistant') {
+                continue;
+              }
+              
+              // Skip pure thinking messages (no text content, only thinking)
+              // Only skip if content array has ONLY thinking types
+              if (msg.content && Array.isArray(msg.content)) {
+                const hasOnlyThinking = msg.content.every(c => c.type === 'thinking');
+                if (hasOnlyThinking) {
+                  continue;
+                }
+              }
+              
+              // Skip heartbeat/summary messages (no content or very short)
+              if (!msg.content || (Array.isArray(msg.content) && msg.content.length === 0)) {
+                continue;
+              }
+              
+              const usage = msg.usage;
+              // Only count actual input/output tokens, NOT cache read tokens
+              // cacheRead is returned but not billed
               const input = usage.input || 0;
               const output = usage.output || 0;
-              const total = usage.totalTokens || (input + output);
+              const total = input + output; // Don't use totalTokens as it may include cache
 
               // Determine project for this message
               const project = sessionProject || 'unknown';

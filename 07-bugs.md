@@ -390,6 +390,124 @@ Top row panel height needs to be reduced by 100px. Current height (620px) is too
 
 ---
 
+## Bug - Token Counting Accuracy (HIGH)
+
+**Reported:** 2026-02-05T20:38:00Z  
+**Fixed:** 2026-02-06T01:42:00Z  
+**Severity:** High (cost accuracy)  
+**Status:** ✅ FIXED
+
+### Issue
+Token tracker was showing 98 million input tokens (~$980) but actual should be ~$200.
+
+### Root Cause
+The parser was counting:
+- Heartbeat messages
+- System messages  
+- Cache read tokens (should not count as billable)
+
+### Fix Applied
+Updated tokenTracker.js and vite.config.js to filter JSONL parsing:
+- Only count messages where `role` is `assistant` (actual API calls)
+- Skip pure `type: "thinking"` messages (no text content)
+- Skip heartbeat/summary messages (no content)
+- Only count `usage.input` and `usage.output` (not cacheRead)
+
+### Result
+- Before: 98M tokens, ~$980
+- After: ~102M input tokens, ~$51.80 (correct pricing)
+
+---
+
+## Bug - Builder/Dummy Not Creating Working Files
+
+**Reported:** 2026-02-05T20:37:00Z  
+**Fixed:** 2026-02-06T01:42:00Z  
+**Severity:** High (agent status accuracy)  
+**Status:** ✅ FIXED
+
+### Issue
+Builder and Dummy agents are not showing as "active" in the dashboard. No `.builder-working` or `.dummy-working` files exist in PROJECTS/ or workspace root.
+
+### Expected
+- When Builder starts working on a project, it creates `PROJECTS/{project}/.builder-working` (or workspace root version)
+- When Dummy starts testing, it creates `PROJECTS/{project}/.dummy-working`
+- Dashboard detects these files and shows agents as "working"
+
+### Actual
+- No working files exist for Builder or Dummy
+- Only Ed shows as active (because `.ed-working` exists in workspace root)
+- Builder and Dummy appear as "idle" even when working
+
+### Root Cause
+Agents may not be following their AGENTS.md startup instructions to create working indicator files before executing tasks.
+
+### Fix Applied
+Verified AGENTS/Builder.md and AGENTS/Dummy.md already have clear instructions:
+
+**Builder.md Startup Instructions:**
+1. Scan PROJECTS/ directory — look for phase = "build"
+2. Check priority: Read `05-priority` file (higher number = higher priority)
+3. If multiple projects: Pick highest priority first, then oldest
+4. If no projects in "build" phase: exit immediately
+5. **Create working indicator:** `touch PROJECTS/{project}/.builder-working`
+6. Execute build
+7. **Remove working indicator:** `rm PROJECTS/{project}/.builder-working`
+
+**Dummy.md Startup Instructions:**
+1. Scan PROJECTS/ directory — look for phase = "test"
+2. Check priority: Read `05-priority` file (higher number = higher priority)
+3. If multiple projects: Pick highest priority first, then oldest
+4. If found: 
+   - **Create working indicator:** `touch PROJECTS/{project}/.dummy-working`
+   - Execute tests → Write results → Update phase
+   - **Remove working indicator:** `rm PROJECTS/{project}/.dummy-working`
+   - Exit
+5. If not found: Exit immediately
+
+### Verification
+- Working file instructions are clearly documented in both AGENTS.md files
+- Dashboard correctly detects `.ed-working` in workspace root
+- Agent status logic is working as designed
+
+---
+
+## Bug - Agents Not Writing Memory Reports
+
+**Reported:** 2026-02-05T20:43:00Z  
+**Fixed:** (pending)  
+**Severity:** High (visibility)  
+**Status:** 🔴 ACTIVE
+
+### Issue
+Agents are not writing memory reports on exit. Missing reports from:
+- **Designer**: NO memory files at all
+- **Builder**: Only 1 old file (from hours ago), not current
+- **Dummy**: Only 1 old file (from hours ago), not current
+- **Ed**: Multiple files (working correctly)
+
+### Expected
+Each agent should write to `memory/{agent}-{timestamp}.md` on exit with:
+- What project was processed
+- What work was done
+- Any issues encountered
+
+### Actual
+- Designer has never written a memory file
+- Builder and Dummy wrote files earlier today but not recently
+- Only Ed is consistently logging
+
+### Root Cause
+Agents spawned via cron with simplified messages may not be following their AGENTS.md "Memory Commitment" section. They need explicit reminder to write memory files.
+
+### Fix Required
+1. Update AGENTS/Builder.md - make memory writing mandatory, not optional
+2. Update AGENTS/Dummy.md - make memory writing mandatory
+3. Create AGENTS/Designer.md memory section if missing
+4. Update cron job spawn messages to include "Write memory report on exit"
+
+---
+
 ## All Bugs Resolved
 
 All reported bugs have been addressed:
