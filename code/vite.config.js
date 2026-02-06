@@ -6,6 +6,22 @@ import path from 'path'
 const WORKSPACE_ROOT = '/home/molten/.openclaw/workspace';
 const ACTIVITY_HISTORY_FILE = path.join(WORKSPACE_ROOT, 'mission-control-activity.json');
 const MAX_ACTIVITY_ENTRIES = 100;
+const SESSIONS_DIR = '/home/molten/.openclaw/agents/main/sessions';
+const TOKEN_USAGE_FILE = path.join(WORKSPACE_ROOT, 'token-usage.json');
+
+// Start token tracking polling (every 30 seconds)
+let tokenPollInterval = null;
+function startTokenPolling() {
+  // Run immediately on startup
+  trackTokens();
+  
+  // Then poll every 30 seconds
+  tokenPollInterval = setInterval(() => {
+    trackTokens();
+  }, 30000);
+  
+  console.log('[TokenTracker] Polling started - every 30 seconds');
+}
 
 // Activity history tracking
 let lastProjectPhases = new Map();
@@ -118,6 +134,156 @@ function getAgentStatus(agentId) {
 }
 
 // Parse memory files for agent lifecycle events
+/**
+ * Track tokens from session files
+ */
+function trackTokens() {
+  const projects = {};
+  let grandTotal = { input: 0, output: 0, total: 0 };
+
+  try {
+    // Check if sessions dir exists
+    if (!fs.existsSync(SESSIONS_DIR)) {
+      console.warn('[TokenTracker] Sessions directory not found');
+      return { projects, grandTotal, lastUpdated: new Date().toISOString() };
+    }
+
+    // Get all .jsonl files (excluding .lock files)
+    const files = fs.readdirSync(SESSIONS_DIR)
+      .filter(f => f.endsWith('.jsonl') && !f.includes('.lock'))
+      .map(f => path.join(SESSIONS_DIR, f));
+
+    for (const file of files) {
+      try {
+        const stats = fs.statSync(file);
+        // Skip files larger than 100MB to avoid memory issues
+        if (stats.size > 100 * 1024 * 1024) {
+          console.warn(`[TokenTracker] Skipping large file: ${path.basename(file)}`);
+          continue;
+        }
+
+        const content = fs.readFileSync(file, 'utf-8');
+        const lines = content.split('\n').filter(line => line.trim());
+
+        let sessionCwd = null;
+        let sessionProject = null;
+
+        for (const line of lines) {
+          try {
+            const entry = JSON.parse(line);
+
+            // Extract cwd from session header
+            if (entry.type === 'session' && entry.cwd) {
+              sessionCwd = entry.cwd;
+              sessionProject = extractProjectFromPath(sessionCwd);
+            }
+
+            // Extract usage from message entries
+            if (entry.type === 'message' && entry.message?.usage) {
+              const usage = entry.message.usage;
+              const input = usage.input || 0;
+              const output = usage.output || 0;
+              const total = usage.totalTokens || (input + output);
+
+              // Determine project for this message
+              const project = sessionProject || 'unknown';
+
+              // Initialize project entry if needed
+              if (!projects[project]) {
+                projects[project] = { input: 0, output: 0, total: 0 };
+              }
+
+              // Add to project totals
+              projects[project].input += input;
+              projects[project].output += output;
+              projects[project].total += total;
+
+              // Add to grand total
+              grandTotal.input += input;
+              grandTotal.output += output;
+              grandTotal.total += total;
+            }
+          } catch (e) {
+            // Skip malformed lines
+            continue;
+          }
+        }
+      } catch (e) {
+        console.error(`[TokenTracker] Error reading ${path.basename(file)}:`, e.message);
+      }
+    }
+
+    const result = {
+      projects,
+      grandTotal,
+      lastUpdated: new Date().toISOString()
+    };
+
+    // Write to output file
+    fs.writeFileSync(TOKEN_USAGE_FILE, JSON.stringify(result, null, 2));
+
+    console.log(`[TokenTracker] Tracked ${Object.keys(projects).length} projects, ${grandTotal.total.toLocaleString()} total tokens`);
+    return result;
+
+  } catch (e) {
+    console.error('[TokenTracker] Error tracking tokens:', e.message);
+    return { projects, grandTotal, lastUpdated: new Date().toISOString() };
+  }
+}
+
+/**
+ * Extract project name from cwd path
+ */
+function extractProjectFromPath(cwd) {
+  if (!cwd) return 'unknown';
+
+  // Match PROJECTS/project-name pattern
+  const match = cwd.match(/PROJECTS\/([^/\\]+)/);
+  if (match) {
+    return match[1];
+  }
+
+  // If in workspace root but not in PROJECTS, check for working file
+  if (cwd.includes('.openclaw/workspace')) {
+    // Try to find .ed-working or similar files
+    try {
+      const workingFiles = fs.readdirSync(cwd)
+        .filter(f => f.startsWith('.') && f.endsWith('-working'));
+      if (workingFiles.length > 0) {
+        // Extract project from working file content
+        const workingFile = path.join(cwd, workingFiles[0]);
+        const content = fs.readFileSync(workingFile, 'utf-8').trim();
+        const projectMatch = content.match(/working on\s+(\S+)/i);
+        if (projectMatch) {
+          return projectMatch[1];
+        }
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+
+  // Return last directory component as fallback
+  const parts = cwd.split(/[/\\]/).filter(p => p);
+  return parts.length > 0 ? parts[parts.length - 1] : 'unknown';
+}
+
+/**
+ * Read the token usage file
+ */
+function readTokenUsage() {
+  try {
+    const content = fs.readFileSync(TOKEN_USAGE_FILE, 'utf-8');
+    return JSON.parse(content);
+  } catch (e) {
+    return {
+      projects: {},
+      grandTotal: { input: 0, output: 0, total: 0 },
+      lastUpdated: new Date().toISOString()
+    };
+  }
+}
+
 function parseAgentEvents() {
   const memoryDir = path.join(WORKSPACE_ROOT, 'memory');
   const entries = readDir(memoryDir);
@@ -165,6 +331,19 @@ function workspaceApiMiddleware() {
   return {
     name: 'workspace-api',
     configureServer(server) {
+      // Start token tracking on server start
+      console.log('[Server] Starting token tracker...');
+      trackTokens();
+
+      // Poll token tracker every 30 seconds
+      const tokenTrackerInterval = setInterval(() => {
+        trackTokens();
+      }, 30000);
+
+      // Clean up on server close
+      server.httpServer?.on('close', () => {
+        clearInterval(tokenTrackerInterval);
+      });
       // GET /api/projects - list all projects
       server.middlewares.use('/api/projects', (req, res, next) => {
         if (req.method !== 'GET') return next();
@@ -350,36 +529,14 @@ function workspaceApiMiddleware() {
         res.end(JSON.stringify(reports));
       });
 
-      // GET /api/tokens - aggregate token data
+      // GET /api/tokens - real-time token usage from session files
       server.middlewares.use('/api/tokens', (req, res, next) => {
         if (req.method !== 'GET') return next();
-        
-        const projectsDir = path.join(WORKSPACE_ROOT, 'PROJECTS');
-        const entries = readDir(projectsDir);
-        
-        const tokens = entries
-          .filter(e => e.isDirectory())
-          .map(e => {
-            const tokensFile = path.join(projectsDir, e.name, '09-tokens.json');
-            const costFile = path.join(projectsDir, e.name, '10-cost-estimate.json');
-            
-            const tokensData = readFile(tokensFile);
-            const costData = readFile(costFile);
-            
-            const tokens = tokensData ? JSON.parse(tokensData) : {};
-            const cost = costData ? JSON.parse(costData) : {};
-            
-            return {
-              name: e.name,
-              inputTokens: tokens.total_input_tokens || tokens.input || 0,
-              outputTokens: tokens.total_output_tokens || tokens.output || 0,
-              estimatedCost: tokens.estimated_cost_usd || cost.estimated || 0,
-              actualCost: tokens.actual_cost_usd || cost.actual || 0
-            };
-          });
-        
+
+        // Return tracked token usage
+        const tokenData = readTokenUsage();
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(tokens));
+        res.end(JSON.stringify(tokenData));
       });
 
       // GET /api/health - system health

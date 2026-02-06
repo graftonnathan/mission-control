@@ -4,11 +4,11 @@ import { formatTokens, formatCurrency } from '../utils/formatters';
 import { calculateCost } from '../utils/constants';
 
 export function TokenMonitor({ selectedProject }) {
-  const { projects, totalInput, totalOutput, totalCost, loading, error } = useTokens();
+  const { projectList, totalInput, totalOutput, totalCost, loading, error } = useTokens();
 
   // If a project is selected, show detailed view for that project
-  const displayProject = selectedProject 
-    ? projects.find(p => p.name === selectedProject.name)
+  const displayProject = selectedProject
+    ? projectList.find(p => p.name === selectedProject.name)
     : null;
 
   return (
@@ -31,7 +31,7 @@ export function TokenMonitor({ selectedProject }) {
           <div className="bg-mission-bg/50 rounded p-3">
             <div className="text-xs text-mission-muted uppercase mb-2">Total Cost</div>
             <div className="text-xl font-mono font-semibold text-status-active">
-              {formatCurrency(displayProject.actualCost || displayProject.estimatedCost || 0)}
+              {formatCurrency(displayProject.cost || 0)}
             </div>
           </div>
           <div className="text-xs text-mission-muted text-center pt-2">
@@ -50,30 +50,26 @@ export function TokenMonitor({ selectedProject }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-mission-border/30">
-              {projects.length === 0 && !loading && (
+              {projectList.length === 0 && !loading && (
                 <tr>
                   <td colSpan="3" className="py-4 text-center text-mission-muted">
                     No projects
                   </td>
                 </tr>
               )}
-              {projects.map((project) => {
-                const tokenCount = (project.inputTokens || 0) + (project.outputTokens || 0);
-                const cost = project.actualCost || project.estimatedCost || 0;
-                return (
-                  <tr key={project.name} className="hover:bg-mission-bg/30">
-                    <td className="py-2 text-mission-text truncate max-w-[80px]">
-                      {project.name}
-                    </td>
-                    <td className="py-2 text-right font-mono text-mission-muted">
-                      {formatTokens(tokenCount)}
-                    </td>
-                    <td className="py-2 text-right font-mono text-status-active">
-                      {formatCurrency(cost)}
-                    </td>
-                  </tr>
-                );
-              })}
+              {projectList.map((project) => (
+                <tr key={project.name} className="hover:bg-mission-bg/30">
+                  <td className="py-2 text-mission-text truncate max-w-[80px]">
+                    {project.name}
+                  </td>
+                  <td className="py-2 text-right font-mono text-mission-muted">
+                    {formatTokens(project.totalTokens || 0)}
+                  </td>
+                  <td className="py-2 text-right font-mono text-status-active">
+                    {formatCurrency(project.cost || 0)}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
           

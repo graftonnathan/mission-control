@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { getTokenData } from '../utils/fileApi';
 import { POLL_INTERVALS, calculateCost } from '../utils/constants';
 
 export function useTokens() {
   const [tokens, setTokens] = useState({
-    projects: [],
+    projects: {},
+    projectList: [],
     totalInput: 0,
     totalOutput: 0,
     totalCost: 0
@@ -18,24 +18,39 @@ export function useTokens() {
 
     const loadTokens = async () => {
       try {
-        const data = await getTokenData();
+        const response = await fetch('/api/tokens');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
         if (isMounted) {
-          const projects = data || [];
-          
-          // Calculate totals
-          const totalInput = projects.reduce((sum, p) => sum + (p.inputTokens || 0), 0);
-          const totalOutput = projects.reduce((sum, p) => sum + (p.outputTokens || 0), 0);
-          const totalCost = projects.reduce((sum, p) => {
-            return sum + calculateCost(p.inputTokens, p.outputTokens);
-          }, 0);
+          // New format: { projects: {}, grandTotal: {}, lastUpdated: string }
+          const projects = data.projects || {};
+          const grandTotal = data.grandTotal || { input: 0, output: 0, total: 0 };
+
+          // Convert projects object to array for display
+          const projectList = Object.entries(projects).map(([name, stats]) => ({
+            name,
+            inputTokens: stats.input || 0,
+            outputTokens: stats.output || 0,
+            totalTokens: stats.total || 0,
+            cost: calculateCost(stats.input || 0, stats.output || 0)
+          }));
+
+          // Calculate totals from grandTotal
+          const totalInput = grandTotal.input || 0;
+          const totalOutput = grandTotal.output || 0;
+          const totalCost = calculateCost(totalInput, totalOutput);
 
           setTokens({
             projects,
+            projectList,
             totalInput,
             totalOutput,
             totalCost
           });
-          setLastUpdate(new Date());
+          setLastUpdate(data.lastUpdated ? new Date(data.lastUpdated) : new Date());
           setError(null);
         }
       } catch (err) {
@@ -49,15 +64,11 @@ export function useTokens() {
       }
     };
 
-    const timeout = setTimeout(() => {
-      loadTokens();
-    }, 2000);
-
-    const interval = setInterval(loadTokens, POLL_INTERVALS.TOKENS);
+    loadTokens();
+    const interval = setInterval(loadTokens, POLL_INTERVALS.TOKENS || 30000);
 
     return () => {
       isMounted = false;
-      clearTimeout(timeout);
       clearInterval(interval);
     };
   }, []);
