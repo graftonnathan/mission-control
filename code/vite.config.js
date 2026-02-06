@@ -95,11 +95,10 @@ function getAgentStatus(agentId) {
   const projectsDir = path.join(WORKSPACE_ROOT, 'PROJECTS');
   const agentIdLower = agentId.toLowerCase();
   
-  // First check workspace root for working file (current location)
+  // First check workspace root for working file
   const rootWorkingFile = path.join(WORKSPACE_ROOT, `.${agentIdLower}-working`);
   if (fs.existsSync(rootWorkingFile)) {
     const content = readFile(rootWorkingFile)?.trim() || '';
-    // Parse content like "Ed is working on mission-control fixes"
     const projectMatch = content.match(/working on\s+(\S+)/i);
     const project = projectMatch ? projectMatch[1] : 'unknown';
     const phaseFile = path.join(projectsDir, project, '04-phase');
@@ -109,6 +108,69 @@ function getAgentStatus(agentId) {
       project: project,
       phase: phase,
       task: content || `${phase} phase on ${project}`
+    };
+  }
+  
+  // Check EXCHANGE/flags/ directory for working file
+  const exchangeFlagsDir = path.join(WORKSPACE_ROOT, 'EXCHANGE', 'flags');
+  const exchangeWorkingFile = path.join(exchangeFlagsDir, `.${agentIdLower}-working`);
+  if (fs.existsSync(exchangeWorkingFile)) {
+    const content = readFile(exchangeWorkingFile)?.trim() || '';
+    let project = 'unknown';
+    let phase = 'unknown';
+    let task = content;
+    
+    // Try to parse project from content
+    const projectMatch = content.match(/working on\s+(\S+)/i);
+    if (projectMatch) {
+      project = projectMatch[1];
+    } else {
+      // Try to find project from active queue tasks
+      const queueDir = path.join(WORKSPACE_ROOT, 'EXCHANGE', 'queue', 'active');
+      if (fs.existsSync(queueDir)) {
+        const queueFiles = fs.readdirSync(queueDir).filter(f => f.endsWith('.json'));
+        for (const file of queueFiles) {
+          try {
+            const taskData = JSON.parse(fs.readFileSync(path.join(queueDir, file), 'utf-8'));
+            if (taskData.claimedBy?.toLowerCase() === agentIdLower) {
+              project = taskData.project || 'unknown';
+              task = taskData.title || content;
+              break;
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      }
+      
+      // If still unknown, check for projects in fix/implement phase
+      if (project === 'unknown') {
+        const entries = readDir(projectsDir);
+        for (const entry of entries) {
+          if (entry.isDirectory()) {
+            const phaseFile = path.join(projectsDir, entry.name, '04-phase');
+            const projectPhase = readFile(phaseFile)?.trim();
+            if (projectPhase === 'fix' || projectPhase === 'implement') {
+              project = entry.name;
+              phase = projectPhase;
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    // Get phase if not already set
+    if (phase === 'unknown' && project !== 'unknown') {
+      const phaseFile = path.join(projectsDir, project, '04-phase');
+      phase = readFile(phaseFile)?.trim() || 'unknown';
+    }
+    
+    return {
+      status: 'working',
+      project: project,
+      phase: phase,
+      task: task || `${phase} phase on ${project}`
     };
   }
   

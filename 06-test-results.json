@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-02-06T19:00:00Z",
+  "timestamp": "2026-02-06T20:55:00Z",
   "success": true,
   "tests_run": 6,
   "tests_passed": 6,
@@ -8,9 +8,8 @@
     {"test": "Health", "status": "pass", "evidence": "healthy"},
     {"test": "Projects", "status": "pass", "evidence": "3 projects"},
     {"test": "Agents", "status": "pass", "evidence": "5 agents"},
-    {"test": "Tokens", "status": "pass", "evidence": "235,021,223"},
+    {"test": "Tokens", "status": "pass", "evidence": "235,115,680"},
     {"test": "LAN", "status": "pass", "evidence": "HTTP 200"},
-    {"test": "Server", "status": "pass", "evidence": "Port 5173, restarted"}
-  ],
-  "notes": "Server restarted during test. All APIs responsive."
+    {"test": "Server", "status": "pass", "evidence": "Port 5173"}
+  ]
 }

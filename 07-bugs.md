@@ -546,3 +546,47 @@ All reported bugs have been addressed:
 11. ✅ Queue displays all backlog items (removed slice limit)
 12. ✅ Recent Activity auto-initializes with current project states
 
+
+---
+
+## Bug - Agent Status Description Shows Verbose Text
+
+**Reported:** 2026-02-06T16:23:00Z  
+**Fixed:** 2026-02-06T16:25:00Z  
+**Severity:** Medium (visual/usability)  
+**Status:** ✅ FIXED
+
+### Issue
+Agent status panel was showing verbose activity descriptions like "fixing mission-control" instead of just the project name "mission-control".
+
+### Expected
+- Description should show just the project name (e.g., "mission-control")
+- No verb prefixes like "fixing", "building", "testing"
+
+### Actual  
+- Activity text showed "fixing project-name" or "building project-name"
+- Too verbose for compact dashboard display
+
+### Root Cause
+The `formatActivity()` function in `AgentStatus.jsx` was designed to show descriptive action text like "fixing bugs" or "building features" based on the current task type.
+
+### Fix
+Simplified `formatActivity()` to return only the project name:
+```javascript
+// Before
+const formatActivity = (agent) => {
+  if (!agent.currentTask) return 'idle';
+  const task = agent.currentTask;
+  if (task.includes('fix')) return `fixing ${agent.project || 'bugs'}`;
+  if (task.includes('implement')) return `building ${agent.project || 'features'}`;
+  // ... etc
+};
+
+// After  
+const formatActivity = (agent) => {
+  if (!agent.currentTask) return 'idle';
+  return agent.project || 'active';
+};
+```
+
+**File Changed:** `code/src/components/AgentStatus.jsx`

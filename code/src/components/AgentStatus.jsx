@@ -38,19 +38,13 @@ export function AgentStatus() {
       .trim();
   };
 
-  // Format activity text for display
+  // Format activity text for display - shows just project name
   const formatActivity = (agent) => {
     if (!agent.currentTask) {
       return 'idle';
     }
-    // Extract verb and object from task
-    const task = agent.currentTask;
-    if (task.includes('fix')) return `fixing ${agent.project || 'bugs'}`;
-    if (task.includes('implement')) return `building ${agent.project || 'features'}`;
-    if (task.includes('build')) return `building ${agent.project || ''}`;
-    if (task.includes('test')) return `testing ${agent.project || ''}`;
-    if (task.includes('plan')) return `planning ${agent.project || ''}`;
-    return task;
+    // Return just the project name
+    return agent.project || 'active';
   };
 
   return (

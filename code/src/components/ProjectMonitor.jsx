@@ -174,33 +174,31 @@ export function ProjectMonitor({ selectedProject, onSelectProject }) {
                   )}
                 </div>
 
-                {/* Middle: Phase Badge - takes 2 columns, centered */}
+                {/* Middle: Phase Badge/Dropdown - takes 2 columns, centered */}
                 <div className="col-span-2 flex justify-center">
-                  <StatusBadge phase={project.phase}>{project.phase}</StatusBadge>
-                </div>
-
-                {/* Right: Controls - takes 4 columns */}
-                <div className="col-span-4 flex items-center justify-end gap-3">
                   {editingProject === project.name ? (
                     <select
                       value={project.phase}
                       onChange={(e) => handlePhaseChange(project.name, e.target.value)}
                       disabled={updating}
-                      className="text-xs bg-mission-bg border border-mission-border rounded px-2 py-1 text-mission-text focus:border-status-active focus:outline-none"
+                      className="text-xs bg-mission-bg border border-mission-border rounded px-2 py-1 text-mission-text focus:border-status-active focus:outline-none cursor-pointer"
                       autoFocus
                       onBlur={() => setEditingProject(null)}
                     >
                       {PHASES.map(phase => <option key={phase} value={phase}>{phase}</option>)}
                     </select>
                   ) : (
-                    <button
+                    <div 
                       onClick={(e) => { e.stopPropagation(); setEditingProject(project.name); }}
-                      disabled={updating}
-                      className="text-xs text-mission-muted hover:text-mission-text px-2 py-1 rounded border border-mission-border/50 hover:border-mission-border transition-colors"
+                      className="cursor-pointer"
                     >
-                      Phase
-                    </button>
+                      <StatusBadge phase={project.phase}>{project.phase}</StatusBadge>
+                    </div>
                   )}
+                </div>
+
+                {/* Right: Controls - takes 4 columns */}
+                <div className="col-span-4 flex items-center justify-end gap-3">
 
                   <button
                     onClick={(e) => {
