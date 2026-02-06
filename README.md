@@ -19,8 +19,6 @@ Track all your OpenClaw projects in one place. View current phase, priority, blo
 ### 🤖 Agent Coordination
 Monitor all AI agents in real-time. See who's working, what they're working on, and their current status.
 
-![Agent Status](./screenshots/design-review-03-agents.png)
-
 **Agent States:**
 - 🟢 **Idle** — Agent available for work
 - 🟡 **Working** — Agent actively processing
