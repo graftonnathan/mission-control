@@ -38,10 +38,10 @@ export const TOKEN_RATES = {
   output: 0.003   // $0.003 per 1K output tokens ($3 per 1M)
 };
 
-// Calculate cost from token counts
+// Calculate cost from token counts (rates are per 1K tokens)
 export function calculateCost(inputTokens, outputTokens) {
-  const inputCost = (inputTokens || 0) * TOKEN_RATES.input;
-  const outputCost = (outputTokens || 0) * TOKEN_RATES.output;
+  const inputCost = ((inputTokens || 0) / 1000) * TOKEN_RATES.input;
+  const outputCost = ((outputTokens || 0) / 1000) * TOKEN_RATES.output;
   return inputCost + outputCost;
 }
 

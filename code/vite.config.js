@@ -560,27 +560,9 @@ function workspaceApiMiddleware() {
         // Read real token usage from token-usage.json
         const usageData = readTokenUsage();
         
-        // Transform to format expected by useTokens.js
-        const tokens = Object.entries(usageData.projects || {}).map(([name, data]) => {
-          // Calculate cost from token counts
-          const inputTokens = data.input || 0;
-          const outputTokens = data.output || 0;
-          const inputCost = (inputTokens / 1000) * 0.001;   // $0.001 per 1K input tokens
-          const outputCost = (outputTokens / 1000) * 0.003; // $0.003 per 1K output tokens
-          const totalCost = inputCost + outputCost;
-          
-          return {
-            name,
-            inputTokens,
-            outputTokens,
-            estimatedCost: totalCost,
-            actualCost: totalCost,
-            lastUpdated: usageData.lastUpdated
-          };
-        });
-        
+        // Return in format expected by useTokens.js: { projects: {}, grandTotal: {}, lastUpdated: string }
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(tokens));
+        res.end(JSON.stringify(usageData));
       });
 
       // GET /api/health - system health
