@@ -103,6 +103,38 @@ Totalize actual token usage:
 
 ---
 
+## Token Monitor - Real Usage Tracking (NEW)
+**Priority:** High  
+**Status:** 🔄 ACTIVE
+
+### Problem
+Current token monitor shows context window size, not actual usage.
+
+### Solution
+Parse session transcript files (`.jsonl`) to extract real token usage:
+1. Read `/home/molten/.openclaw/agents/main/sessions/*.jsonl`
+2. Extract `usage.input`, `usage.output`, `usage.totalTokens` from each message
+3. Map sessions to projects based on working directory or context
+4. Aggregate totals per project
+5. Store in `token-usage.json` with format:
+   ```json
+   {
+     "projects": {
+       "mission-control": { "input": 45000, "output": 32000, "cost": 0.15 },
+       "Kinectv1": { "input": 12000, "output": 8000, "cost": 0.04 }
+     },
+     "lastUpdated": "2026-02-05T20:26:00Z"
+   }
+   ```
+6. API endpoint `/api/tokens` reads from this file
+7. Dashboard displays real usage data
+
+**Assigned to:** Ed  
+**Requested by:** Nathan  
+**Date:** 2026-02-05
+
+---
+
 **Previous Round - Assigned to:** Ed
 **Previous Round - Completed:** 2026-02-05
 **Previous Round - Commit:** 4346e4c
