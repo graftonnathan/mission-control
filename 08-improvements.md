@@ -28,6 +28,34 @@
 9. **Extend lower boxes** - ✅ DONE - All panels fill 1080p screen properly with flex layout
 10. **Fix alignment** - ✅ DONE - Projects box alignment fixed with rest of dashboard
 
-**Assigned to:** Ed
-**Completed:** 2026-02-05
-**Commit:** 4346e4c
+---
+
+## Design Review Findings - Round 4
+**Priority:** Medium  
+**Status:** 🎨 DESIGN REVIEW COMPLETE → FIX PHASE
+
+### Visual Polish Required
+See `09-design-feedback.md` for full details with screenshots.
+
+#### Critical
+1. **Text contrast too low** - `mission.text` color `#7a7a90` → should be `#e0e0ff` per architecture
+
+#### High
+2. **Live log font size** - `text-[11px]` → `text-xs` (12px) for readability
+
+#### Medium  
+3. **Agent Status panel width** - `lg:w-48` → `lg:w-56` (reduce truncation)
+4. **Token table headers** - `text-[10px]` → `text-xs` (12px)
+
+#### Polish
+5. **Divider visibility** - Add subtle background track to Agent Reports divider
+
+**Assigned to:** Ed  
+**Designer Review:** 2026-02-05  
+**Screenshots:** `screenshots/design-review-*.png`
+
+---
+
+**Previous Round - Assigned to:** Ed
+**Previous Round - Completed:** 2026-02-05
+**Previous Round - Commit:** 4346e4c
