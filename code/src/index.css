@@ -36,29 +36,37 @@ body {
   background: #3a3a4e;
 }
 
-/* Custom scrollbar for panels - thinner and more subtle */
+/* Custom scrollbar for panels - visible and styled */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a5e #1a1a2e;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
+  display: block !important;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(19, 19, 31, 0.5);
-  border-radius: 3px;
+  background: #1a1a2e;
+  border-radius: 4px;
+  border: 1px solid #2a2a3e;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #3a3a4e;
-  border-radius: 3px;
-  border: 1px solid rgba(74, 74, 90, 0.3);
+  background: #4a4a5e;
+  border-radius: 4px;
+  border: 1px solid #5a5a6e;
+  min-height: 40px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #4a4a5e;
+  background: #5a5a6e;
 }
 
 .custom-scrollbar::-webkit-scrollbar-corner {
-  background: transparent;
+  background: #1a1a2e;
 }
 
 /* Animation for live indicator */

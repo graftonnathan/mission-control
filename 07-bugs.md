@@ -288,6 +288,85 @@ Restored top row height to 420px to give the Agent Status and Agent Reports pane
 
 ---
 
+## Bug - Panels Not Filling Available Space
+
+**Reported:** 2026-02-05T20:20:00Z  
+**Fixed:** 2026-02-05T20:22:00Z  
+**Severity:** Medium (layout)  
+**Status:** ✅ FIXED
+
+### Issue
+Multiple panels not using their full allocated space:
+- **Queue/Backlog list** - not filling the panel height
+- **Recent Activity** - not filling its container
+- Other scrollable lists need to flex to fill available space
+
+### Expected
+- Lists should use `flex-1` or `h-full` to fill parent container
+- Content area should expand to fill panel, then scroll if overflow
+
+### Actual
+- Lists are not expanding to fill available vertical space
+- Empty space at bottom of panels
+
+### Fix Applied
+- Updated `QueueStatus.jsx` to use `flex-1 flex flex-col` on container and list sections
+- Removed `max-h` limits that constrained list growth
+- Updated `SystemHealth.jsx` to ensure proper flex layout
+- Lists now fill available space and scroll when content overflows
+
+---
+
+## Bug - Top Windows Need MORE Height (+200px)
+
+**Reported:** 2026-02-05T20:20:00Z  
+**Fixed:** (pending)  
+**Severity:** High (layout)  
+**Status:** 🔴 ACTIVE
+
+### Issue
+Top row panels still need MORE height. Current height (420px) is not enough - needs an **additional 200px** (total ~620px or more).
+
+### Expected
+- Top row (Agent Status, Agent Reports, etc.) should be significantly taller
+- Add ~200px more to current height
+
+### Actual
+- Height was restored to 420px but user needs MORE space
+- Panels still feel cramped
+
+### Fix Required
+- Increase top row height from 420px to ~620px (or add 200px to whatever current value is)
+- Check `Dashboard.jsx` for top row height setting
+
+---
+
+## Bug - Log Scrollbar Still Not Visible
+
+**Reported:** 2026-02-05T20:20:00Z  
+**Fixed:** (pending)  
+**Severity:** Medium (usability)  
+**Status:** 🔴 ACTIVE
+
+### Issue
+Log panel scrollbar is still not visible or not working. User cannot scroll through log history.
+
+### Expected
+- Visible scrollbar on Log panel
+- Dark theme styling matching other scrollbars
+
+### Actual
+- Scrollbar not appearing or not styled properly
+- Cannot scroll log content
+
+### Fix Required
+- Verify `custom-scrollbar` class is applied correctly
+- Check if `index.css` scrollbar styles are loaded
+- May need to add explicit `overflow-y: scroll` or webkit scrollbar styles
+- Ensure parent container has defined height for scrollbar to appear
+
+---
+
 ## All Bugs Resolved
 
 All reported bugs have been addressed:

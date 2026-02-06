@@ -16,7 +16,7 @@ export function SystemHealth() {
 
   return (
     <Panel title="Recent Activity" loading={loading} error={error} className="h-full" flexContent>
-      <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar space-y-1">
         {history.length === 0 && !loading && (
           <div className="text-mission-muted/60 text-xs text-center py-8">
             No activity yet

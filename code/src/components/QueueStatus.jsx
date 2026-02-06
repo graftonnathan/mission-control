@@ -29,11 +29,11 @@ export function QueueStatus() {
       </div>
 
       {/* Recent items */}
-      <div className="flex-1 overflow-y-auto min-h-0 space-y-2">
+      <div className="flex-1 flex flex-col min-h-0 space-y-2 overflow-hidden">
         {backlog.length > 0 && (
-          <div>
-            <div className="text-[10px] text-mission-muted uppercase mb-1">Backlog ({backlog.length})</div>
-            <div className="space-y-1 max-h-24 overflow-y-auto custom-scrollbar">
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="text-[10px] text-mission-muted uppercase mb-1 flex-shrink-0">Backlog ({backlog.length})</div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1 min-h-0">
               {backlog.map((item, idx) => (
                 <div key={idx} className="text-xs text-mission-text truncate bg-mission-bg/30 rounded px-2 py-1">
                   {item.title || item.name || `Task ${idx + 1}`}
@@ -42,11 +42,11 @@ export function QueueStatus() {
             </div>
           </div>
         )}
-        
+
         {claimed.length > 0 && (
-          <div>
-            <div className="text-[10px] text-status-working uppercase mb-1">Active ({claimed.length})</div>
-            <div className="space-y-1 max-h-20 overflow-y-auto custom-scrollbar">
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="text-[10px] text-status-working uppercase mb-1 flex-shrink-0">Active ({claimed.length})</div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1 min-h-0">
               {claimed.map((item, idx) => (
                 <div key={idx} className="text-xs text-mission-text truncate bg-mission-bg/30 rounded px-2 py-1">
                   {item.agent && <span className="text-status-working">{item.agent}:</span>} {item.title || item.name || `Task ${idx + 1}`}
