@@ -52,8 +52,6 @@ Centralized task queue for coordinating work between agents.
 ### 📑 Agent Reports
 Access recent reports from all agents in one place.
 
-![Agent Reports](./screenshots/design-review-06-reports.png)
-
 ### 📜 Live Activity Log
 Real-time event stream showing system activity, phase changes, and agent actions.
 
