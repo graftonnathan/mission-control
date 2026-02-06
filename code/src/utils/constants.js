@@ -34,8 +34,8 @@ export const STATUS_COLORS = {
 
 // Token cost rates (per 1K tokens)
 export const TOKEN_RATES = {
-  input: 0.00001,   // $0.01 per 1K input tokens
-  output: 0.00003   // $0.03 per 1K output tokens
+  input: 0.001,   // $0.001 per 1K input tokens ($1 per 1M)
+  output: 0.003   // $0.003 per 1K output tokens ($3 per 1M)
 };
 
 // Calculate cost from token counts

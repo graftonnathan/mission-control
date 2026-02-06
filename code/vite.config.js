@@ -541,8 +541,8 @@ function workspaceApiMiddleware() {
           // Calculate cost from token counts
           const inputTokens = data.input || 0;
           const outputTokens = data.output || 0;
-          const inputCost = (inputTokens / 1000) * 0.01;   // $0.01 per 1K input tokens
-          const outputCost = (outputTokens / 1000) * 0.03; // $0.03 per 1K output tokens
+          const inputCost = (inputTokens / 1000) * 0.001;   // $0.001 per 1K input tokens
+          const outputCost = (outputTokens / 1000) * 0.003; // $0.003 per 1K output tokens
           const totalCost = inputCost + outputCost;
           
           return {
