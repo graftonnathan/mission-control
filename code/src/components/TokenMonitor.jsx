@@ -42,7 +42,7 @@ export function TokenMonitor({ selectedProject }) {
         // List view of all projects
         <div className="h-full overflow-y-auto">
           <table className="w-full text-xs">
-            <thead className="text-mission-muted uppercase text-[10px]">
+            <thead className="text-mission-muted uppercase text-xs">
               <tr>
                 <th className="text-left pb-2">Project</th>
                 <th className="text-right pb-2">Tokens</th>

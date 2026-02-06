@@ -23,7 +23,7 @@ export function LiveLog() {
 
   return (
     <Panel title="Live Log" loading={loading} error={error} className="h-full">
-      <div className="h-[200px] overflow-y-auto font-mono text-[11px] leading-tight">
+      <div className="h-[200px] overflow-y-auto font-mono text-xs leading-tight">
         {events.length === 0 && !loading && (
           <div className="text-mission-muted/50 text-center py-4">
             No recent events

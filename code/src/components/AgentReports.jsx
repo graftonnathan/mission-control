@@ -125,7 +125,7 @@ export function AgentReports() {
 
         {/* Resizable Divider */}
         <div
-          className={`w-1 cursor-col-resize flex-shrink-0 mx-1 relative group ${
+          className={`w-1 cursor-col-resize flex-shrink-0 mx-1 relative group bg-mission-border/20 ${
             isDragging ? 'bg-status-active' : 'hover:bg-mission-border'
           }`}
           onMouseDown={() => setIsDragging(true)}

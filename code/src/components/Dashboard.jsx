@@ -48,7 +48,7 @@ export function Dashboard() {
         {/* Top Row: Agent Status (narrow sidebar) + Agent Reports (fills remaining) */}
         <div className="flex flex-col lg:flex-row gap-4 flex-shrink-0" style={{ height: '420px' }}>
           {/* Agent Status - narrow sidebar */}
-          <div className="w-full lg:w-48 flex-shrink-0 h-full">
+          <div className="w-full lg:w-56 flex-shrink-0 h-full">
             <AgentStatus />
           </div>
           

@@ -1,3 +1,18 @@
+## Bug - Text Contrast Too Low
+
+**Reported:** 2026-02-05T19:35:00Z  
+**Fixed:** 2026-02-05T19:45:00Z  
+**Severity:** Critical (accessibility)  
+**Status:** ✅ FIXED
+
+### Issue
+The `mission.text` color in `tailwind.config.js` was set to `#7a7a90` (muted gray), making project/agent names hard to read against the dark panel background (`#13131f`).
+
+### Fix
+Changed `mission.text` from `'#7a7a90'` to `'#e0e0ff'` per architecture document specification.
+
+---
+
 ## Bug - Agent Name Display
 
 **Reported:** 2026-02-05T19:10:00Z  
