@@ -57,13 +57,6 @@ Access recent reports from all agents in one place.
 ### 📜 Live Activity Log
 Real-time event stream showing system activity, phase changes, and agent actions.
 
-![Live Log](./screenshots/design-review-07-livelog.png)
-
-### 📱 Responsive Design
-Optimized for both desktop and tablet views.
-
-![Responsive Tablet View](./screenshots/design-review-08-responsive-tablet.png)
-
 ---
 
 ## 🏗️ Architecture
