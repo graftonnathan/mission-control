@@ -11,6 +11,30 @@ function formatTimeShort(isoString) {
   });
 }
 
+function getActivityIcon(action) {
+  switch (action) {
+    case 'paused': return '⏸';
+    case 'resumed': return '▶';
+    case 'restarted': return '⟳';
+    case 'pushed': return '⬆';
+    case 'online': return '🟢';
+    case 'offline': return '🔴';
+    default: return '•';
+  }
+}
+
+function getActivityColor(action) {
+  switch (action) {
+    case 'paused': return 'text-orange-400';
+    case 'resumed': return 'text-status-active';
+    case 'restarted': return 'text-status-working';
+    case 'pushed': return 'text-blue-400';
+    case 'online': return 'text-status-active';
+    case 'offline': return 'text-status-error';
+    default: return 'text-mission-muted';
+  }
+}
+
 export function SystemHealth() {
   const { history, loading, error } = useActivityHistory();
 
@@ -36,15 +60,31 @@ export function SystemHealth() {
                   {formatTimeShort(entry.timestamp)}
                 </span>
               </div>
-              <div className="flex items-center gap-1 mt-0.5">
-                <span className={`text-[10px] px-1.5 py-0.5 rounded bg-mission-panel text-mission-muted`}>
-                  {entry.oldPhase}
-                </span>
-                <span className="text-[10px] text-mission-muted">→</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded bg-mission-panel text-mission-text`}>
-                  {entry.newPhase}
-                </span>
-              </div>
+              
+              {/* Phase change */}
+              {entry.oldPhase && entry.newPhase && (
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded bg-mission-panel text-mission-muted`}>
+                    {entry.oldPhase}
+                  </span>
+                  <span className="text-[10px] text-mission-muted">→</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded bg-mission-panel text-mission-text`}>
+                    {entry.newPhase}
+                  </span>
+                </div>
+              )}
+              
+              {/* Action (pause, restart, push, status) */}
+              {entry.action && (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className={getActivityColor(entry.action)}>
+                    {getActivityIcon(entry.action)}
+                  </span>
+                  <span className={`text-[10px] ${getActivityColor(entry.action)} capitalize`}>
+                    {entry.action}
+                  </span>
+                </div>
+              )}
             </div>
           ))}
         </div>

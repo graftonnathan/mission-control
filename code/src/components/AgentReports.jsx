@@ -146,7 +146,7 @@ export function AgentReports() {
           style={{ width: `${100 - dividerPosition - 2}%` }}
         >
           {selectedReport ? (
-            <div className="space-y-3">
+            <div className="space-y-3 bg-mission-bg/30 rounded p-3">
               <div className="flex items-center justify-between border-b border-mission-border/30 pb-2">
                 <div className="flex items-center gap-2">
                   <span className={`${getIconColor(selectedReport.type)} font-bold text-lg`}>

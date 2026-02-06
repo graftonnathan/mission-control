@@ -643,14 +643,29 @@ function workspaceApiMiddleware() {
         res.end(JSON.stringify(health));
       });
 
-      // GET /api/events - agent lifecycle events
+      // GET /api/events - agent lifecycle events + project activities
       server.middlewares.use('/api/events', (req, res, next) => {
         if (req.method !== 'GET') return next();
         
-        const events = parseAgentEvents();
+        const agentEvents = parseAgentEvents();
+        const activityHistory = readActivityHistory();
+        
+        // Convert activity entries to event format
+        const activityEvents = activityHistory.map(entry => ({
+          timestamp: entry.timestamp,
+          agent: entry.project || 'system',
+          message: entry.action 
+            ? `${entry.action} (${entry.type})`
+            : `phase: ${entry.oldPhase} → ${entry.newPhase}`
+        }));
+        
+        // Merge and sort by timestamp
+        const allEvents = [...agentEvents, ...activityEvents]
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+          .slice(0, 50);
         
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(events));
+        res.end(JSON.stringify(allEvents));
       });
 
       // GET /api/activity - project activity history
@@ -924,7 +939,75 @@ function workspaceApiMiddleware() {
           }
         });
       });
-      
+
+      // POST /api/projects/:name/push - push project to git
+      server.middlewares.use('/api/projects', (req, res, next) => {
+        const match = req.url.match(/^\/([^\/]+)\/push$/);
+        if (!match) return next();
+
+        const projectName = decodeURIComponent(match[1]);
+
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+
+        try {
+          const projectDir = path.join(WORKSPACE_ROOT, 'PROJECTS', projectName);
+          const codeDir = path.join(projectDir, 'code');
+
+          if (!fs.existsSync(projectDir)) {
+            res.statusCode = 404;
+            res.end(JSON.stringify({ error: 'Project not found' }));
+            return;
+          }
+
+          // Check if it's a git repo (in projectDir, not codeDir)
+          const gitDir = path.join(projectDir, '.git');
+          if (!fs.existsSync(gitDir)) {
+            res.statusCode = 404;
+            res.end(JSON.stringify({ error: 'Not a git repository' }));
+            return;
+          }
+
+          // First check if there are changes to commit
+          exec('git status --porcelain', { cwd: projectDir }, (statusError, statusStdout) => {
+            const hasChanges = statusStdout && statusStdout.trim().length > 0;
+            
+            if (hasChanges) {
+              // Stage, commit, then push
+              exec('git add -A && git commit -m "auto: dashboard updates" && git push', { cwd: projectDir }, (error, stdout, stderr) => {
+                if (error) {
+                  console.error(`[API] Git push error for ${projectName}:`, error);
+                  res.statusCode = 500;
+                  res.end(JSON.stringify({ error: 'Git push failed', details: error.message }));
+                  return;
+                }
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: true, project: projectName, message: 'Committed and pushed', output: stdout || 'Success' }));
+              });
+            } else {
+              // Just push if no changes
+              exec('git push', { cwd: projectDir }, (error, stdout, stderr) => {
+                if (error) {
+                  console.error(`[API] Git push error for ${projectName}:`, error);
+                  res.statusCode = 500;
+                  res.end(JSON.stringify({ error: 'Git push failed', details: error.message }));
+                  return;
+                }
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: true, project: projectName, message: 'Pushed to git', output: stdout || 'Already up to date' }));
+              });
+            }
+          });
+        } catch (e) {
+          console.error('[API] Error pushing project:', e);
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: 'Failed to push project' }));
+        }
+      });
+
       // EXCHANGE Task Queue APIs
       const EXCHANGE_ROOT = path.join(WORKSPACE_ROOT, 'EXCHANGE');
       const QUEUE_DIRS = {

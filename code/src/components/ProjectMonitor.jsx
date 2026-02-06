@@ -2,15 +2,38 @@ import { useState, useEffect } from 'react';
 import { useProjects } from '../hooks/useProjects';
 import { StatusBadge, Panel } from './StatusBadge';
 import { formatDate } from '../utils/formatters';
-import { setProjectPhase, setProjectBlocked, restartProject, getProjectStatus } from '../utils/fileApi';
+import { setProjectPhase, setProjectBlocked, restartProject, getProjectStatus, pushProjectToGit, logActivity } from '../utils/fileApi';
 
 const PHASES = ['plan', 'implement', 'build', 'test', 'fix', 'review', 'designer', 'complete'];
+
+// Project port mapping
+const PROJECT_PORTS = {
+  'spec-interpreter': 5174,
+  'mission-control': 5173,
+  'Kinectv1': 5175
+};
+
+function ProjectLink({ project }) {
+  const port = PROJECT_PORTS[project.name] || 5173;
+  return (
+    <a
+      href={`http://192.168.1.8:${port}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-medium text-mission-text text-sm truncate hover:text-status-active hover:underline transition-colors"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {project.name}
+    </a>
+  );
+}
 
 export function ProjectMonitor({ selectedProject, onSelectProject }) {
   const { projects, loading, error, refresh } = useProjects();
   const [editingProject, setEditingProject] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [backendStatuses, setBackendStatuses] = useState({});
+  const [prevStatuses, setPrevStatuses] = useState({});
 
   // Poll backend status for all projects
   useEffect(() => {
@@ -19,7 +42,19 @@ export function ProjectMonitor({ selectedProject, onSelectProject }) {
       for (const project of projects) {
         const status = await getProjectStatus(project.name);
         statuses[project.name] = status;
+        
+        // Check for status changes
+        const prevStatus = prevStatuses[project.name];
+        if (prevStatus && prevStatus.running !== status?.running) {
+          await logActivity({
+            type: 'status',
+            action: status?.running ? 'online' : 'offline',
+            project: project.name,
+            timestamp: new Date().toISOString()
+          });
+        }
       }
+      setPrevStatuses(statuses);
       setBackendStatuses(statuses);
     };
 
@@ -61,15 +96,47 @@ export function ProjectMonitor({ selectedProject, onSelectProject }) {
 
   const handleBlockToggle = async (project) => {
     setUpdating(true);
-    const result = await setProjectBlocked(project.name, !project.blocked);
-    if (result) await refresh();
+    const newBlocked = !project.blocked;
+    const result = await setProjectBlocked(project.name, newBlocked);
+    if (result) {
+      await logActivity({
+        type: 'project',
+        action: newBlocked ? 'paused' : 'resumed',
+        project: project.name,
+        timestamp: new Date().toISOString()
+      });
+      await refresh();
+    }
     setUpdating(false);
   };
 
   const handleRestart = async (project) => {
     setUpdating(true);
     const result = await restartProject(project.name);
-    if (result) console.log(`Restarted ${project.name}:`, result.message);
+    if (result) {
+      console.log(`Restarted ${project.name}:`, result.message);
+      await logActivity({
+        type: 'project',
+        action: 'restarted',
+        project: project.name,
+        timestamp: new Date().toISOString()
+      });
+    }
+    setUpdating(false);
+  };
+
+  const handlePush = async (project) => {
+    setUpdating(true);
+    const result = await pushProjectToGit(project.name);
+    if (result) {
+      console.log(`Pushed ${project.name}:`, result.message);
+      await logActivity({
+        type: 'project',
+        action: 'pushed',
+        project: project.name,
+        timestamp: new Date().toISOString()
+      });
+    }
     setUpdating(false);
   };
 
@@ -99,9 +166,7 @@ export function ProjectMonitor({ selectedProject, onSelectProject }) {
                 {/* Left: Status + Name - takes 5 columns */}
                 <div className="col-span-5 flex items-center gap-3 min-w-0">
                   {getStatusIndicator(project.phase, project.blocked)}
-                  <span className="font-medium text-mission-text text-sm truncate">
-                    {project.name}
-                  </span>
+                  <ProjectLink project={project} />
                   {project.blocked && (
                     <span className="text-[10px] text-mission-muted bg-mission-border/50 px-1.5 py-0.5 rounded">
                       BLOCKED
@@ -145,10 +210,10 @@ export function ProjectMonitor({ selectedProject, onSelectProject }) {
                       handleBlockToggle(project);
                     }}
                     disabled={updating}
-                    className={`text-xs px-2 py-1 rounded border transition-colors pointer-events-auto ${
+                    className={`text-xs px-2 py-1 rounded border transition-all pointer-events-auto ${
                       project.blocked
                         ? 'text-orange-400 border-orange-400/50 bg-orange-400/10'
-                        : 'text-mission-muted border-mission-border/50 hover:border-mission-border'
+                        : 'text-mission-muted border-mission-border/50 hover:border-orange-400/30 hover:text-orange-400/70 hover:shadow-[0_0_6px_rgba(251,146,60,0.15)]'
                     }`}
                     title={project.blocked ? 'Resume project' : 'Pause project'}
                   >
@@ -158,10 +223,19 @@ export function ProjectMonitor({ selectedProject, onSelectProject }) {
                   <button
                     onClick={(e) => { e.stopPropagation(); handleRestart(project); }}
                     disabled={updating}
-                    className="text-sm text-status-working border-status-working/30 hover:border-status-working hover:text-status-working px-2 py-1 rounded border transition-colors"
+                    className="text-xs text-orange-400/70 border-orange-400/30 hover:border-orange-400/60 hover:text-orange-400 hover:shadow-[0_0_8px_rgba(251,146,60,0.3)] px-2 py-1 rounded border transition-all"
                     title="Restart"
                   >
                     ⟳
+                  </button>
+
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handlePush(project); }}
+                    disabled={updating}
+                    className="text-xs text-blue-400/70 border-blue-400/30 hover:border-blue-400/60 hover:text-blue-400 hover:shadow-[0_0_8px_rgba(96,165,250,0.3)] px-2 py-1 rounded border transition-all"
+                    title="Git Push"
+                  >
+                    ⬆
                   </button>
 
                   {/* Backend Status */}

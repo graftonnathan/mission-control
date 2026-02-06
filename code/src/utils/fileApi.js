@@ -195,3 +195,42 @@ export async function getProjectStatus(project) {
     return null;
   }
 }
+
+/**
+ * Push project to git
+ */
+export async function pushProjectToGit(project) {
+  try {
+    const response = await fetch(`/api/projects/${encodeURIComponent(project)}/push`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Failed to push ${project} to git:`, error);
+    return null;
+  }
+}
+
+/**
+ * Log activity event
+ */
+export async function logActivity(entry) {
+  try {
+    const response = await fetch('/api/activity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry)
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to log activity:', error);
+    return null;
+  }
+}
