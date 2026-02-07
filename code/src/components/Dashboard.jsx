@@ -33,7 +33,7 @@ export function Dashboard() {
   const isMobile = useIsMobile();
 
   if (isMobile) {
-    return <MobileDashboard currentTime={currentTime} selectedProject={selectedProject} onSelectProject={setSelectedProject} />;
+    return <MobileDashboard currentTime={currentTime} selectedProject={selectedProject} />;
   }
 
   return (
@@ -115,7 +115,7 @@ export function Dashboard() {
 }
 
 // Mobile Dashboard Layout
-function MobileDashboard({ currentTime, selectedProject, onSelectProject }) {
+function MobileDashboard({ currentTime, selectedProject }) {
   return (
     <div className="min-h-screen bg-mission-bg bg-grid p-2 flex flex-col gap-2">
       {/* Compact Header */}
@@ -144,7 +144,7 @@ function MobileDashboard({ currentTime, selectedProject, onSelectProject }) {
 
       {/* Row 3: Projects - Horizontal scrolling cards, full height */}
       <div className="flex-shrink-0" style={{ height: '160px' }}>
-        <ProjectMonitorCards onSelectProject={onSelectProject} />
+        <ProjectMonitorCards />
       </div>
 
       {/* Row 4: Punch List - Tabs on left with buttons */}
@@ -210,7 +210,7 @@ function AgentStatusHorizontal() {
 }
 
 // Horizontal Scrolling Project Cards for Mobile with Popup Controls
-function ProjectMonitorCards({ onSelectProject }) {
+function ProjectMonitorCards() {
   const { projects, loading, error } = useProjectsHook();
   const [selectedProjectPopup, setSelectedProjectPopup] = useState(null);
   const [projectStatus, setProjectStatus] = useState({});
@@ -333,12 +333,6 @@ function ProjectMonitorCards({ onSelectProject }) {
                 className="w-full py-3 px-4 bg-blue-500/20 text-blue-400 rounded text-sm font-medium hover:bg-blue-500/30 active:scale-95 transition-all"
               >
                 ⬆ Git Push
-              </button>
-              <button
-                onClick={() => { onSelectProject(selectedProjectPopup.name); setSelectedProjectPopup(null); }}
-                className="w-full py-3 px-4 bg-mission-border/50 text-mission-text rounded text-sm font-medium hover:bg-mission-border active:scale-95 transition-all"
-              >
-                Select Project
               </button>
             </div>
           </div>
