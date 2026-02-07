@@ -200,8 +200,8 @@ export function QueueStatus() {
 
       {/* New Project Modal */}
       {showNewProjectModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-mission-panel rounded-lg p-8 w-[700px] border border-mission-border">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-mission-panel rounded-lg p-4 md:p-8 w-full max-w-[700px] border border-mission-border max-h-[90vh] overflow-y-auto">
             <h3 className="text-mission-text font-medium mb-4">Create New Project</h3>
             <p className="text-xs text-mission-muted mb-4">
               This will send a prompt to the Architect agent to create a new project.
@@ -262,8 +262,8 @@ export function QueueStatus() {
 
       {/* Add Task Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-mission-panel rounded-lg p-8 w-[700px] border border-mission-border">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-mission-panel rounded-lg p-4 md:p-8 w-full max-w-[700px] border border-mission-border max-h-[90vh] overflow-y-auto">
             <h3 className="text-mission-text font-medium mb-4">Add Punch List Item</h3>
             <div className="mb-4 p-2 bg-mission-bg/50 rounded border border-mission-border/30">
               <span className="text-xs text-mission-muted">Project: </span>

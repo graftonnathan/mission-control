@@ -80,13 +80,18 @@ export function AgentReports() {
     };
   }, [isDragging]);
 
+  // Mobile view: stacked layout
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
   return (
     <Panel title="Agent Reports" loading={loading} error={error} onRetry={retry} className="h-full" flexContent>
       <div ref={containerRef} className="flex flex-1 gap-0 min-h-0">
-        {/* Report List - resizable */}
+        {/* Report List - resizable on desktop, full width on mobile when no selection */}
         <div 
-          className="overflow-y-auto border-r border-mission-border/50 pr-2"
-          style={{ width: `${dividerPosition}%` }}
+          className={`overflow-y-auto border-r border-mission-border/50 pr-2 ${
+            isMobile && selectedReport ? 'hidden' : ''
+          }`}
+          style={{ width: isMobile ? '100%' : `${dividerPosition}%` }}
         >
           {reports.length === 0 && !loading && (
             <div className="text-mission-muted text-sm text-center py-4">
@@ -123,30 +128,43 @@ export function AgentReports() {
           </div>
         </div>
 
-        {/* Resizable Divider */}
-        <div
-          className={`w-1 cursor-col-resize flex-shrink-0 mx-1 relative group bg-mission-border/20 ${
-            isDragging ? 'bg-status-active' : 'hover:bg-mission-border'
-          }`}
-          onMouseDown={() => setIsDragging(true)}
-          title="Drag to resize"
-        >
-          <div className={`absolute inset-y-0 -left-1 -right-1 ${isDragging ? 'bg-status-active/20' : ''}`} />
-          {/* Visual grip indicator */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-0.5 opacity-50 group-hover:opacity-100">
-            <div className="w-0.5 h-1 bg-mission-muted rounded-full" />
-            <div className="w-0.5 h-1 bg-mission-muted rounded-full" />
-            <div className="w-0.5 h-1 bg-mission-muted rounded-full" />
+        {/* Resizable Divider - hidden on mobile */}
+        {!isMobile && (
+          <div
+            className={`w-1 cursor-col-resize flex-shrink-0 mx-1 relative group bg-mission-border/20 ${
+              isDragging ? 'bg-status-active' : 'hover:bg-mission-border'
+            }`}
+            onMouseDown={() => setIsDragging(true)}
+            title="Drag to resize"
+          >
+            <div className={`absolute inset-y-0 -left-1 -right-1 ${isDragging ? 'bg-status-active/20' : ''}`} />
+            {/* Visual grip indicator */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-0.5 opacity-50 group-hover:opacity-100">
+              <div className="w-0.5 h-1 bg-mission-muted rounded-full" />
+              <div className="w-0.5 h-1 bg-mission-muted rounded-full" />
+              <div className="w-0.5 h-1 bg-mission-muted rounded-full" />
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Report Content - fills remaining space */}
+        {/* Report Content - fills remaining space, full width on mobile */}
         <div 
-          className="flex-1 overflow-y-auto pl-2"
-          style={{ width: `${100 - dividerPosition - 2}%` }}
+          className={`flex-1 overflow-y-auto pl-2 ${
+            isMobile && !selectedReport ? 'hidden' : ''
+          }`}
+          style={{ width: isMobile ? '100%' : `${100 - dividerPosition - 2}%` }}
         >
           {selectedReport ? (
             <div className="space-y-3 bg-mission-bg/30 rounded p-3">
+              {/* Mobile back button */}
+              {isMobile && (
+                <button
+                  onClick={() => setSelectedReport(null)}
+                  className="mb-2 text-xs text-mission-muted hover:text-mission-text flex items-center gap-1"
+                >
+                  ← Back to list
+                </button>
+              )}
               <div className="flex items-center justify-between border-b border-mission-border/30 pb-2">
                 <div className="flex items-center gap-2">
                   <span className={`${getIconColor(selectedReport.type)} font-bold text-lg`}>
@@ -156,7 +174,7 @@ export function AgentReports() {
                     <div className="text-mission-text font-medium">
                       {selectedReport.filename.replace('.md', '')}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-mission-muted">
+                    <div className="flex items-center gap-2 text-xs text-mission-muted flex-wrap">
                       <span>{selectedReport.agent}</span>
                       <span>•</span>
                       <span className={getIconColor(selectedReport.type)}>

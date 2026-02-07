@@ -44,20 +44,20 @@ export function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col gap-4 min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col gap-4 min-h-0 overflow-auto md:overflow-hidden">
 
-        {/* Row 1: Agents (narrow) + Agent Reports - 2 columns */}
-        <div className="grid grid-cols-12 gap-4 flex-shrink-0" style={{ height: '500px' }}>
-          <div className="col-span-2 h-full min-h-0 overflow-hidden">
+        {/* Row 1: Agents (narrow) + Agent Reports - responsive layout */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-shrink-0" style={{ height: 'auto', minHeight: '300px', maxHeight: '500px' }}>
+          <div className="col-span-1 md:col-span-2 h-full min-h-0 overflow-hidden">
             <AgentStatusNarrow />
           </div>
-          <div className="col-span-10 h-full min-h-0 overflow-hidden">
+          <div className="col-span-1 md:col-span-10 h-full min-h-0 overflow-hidden">
             <AgentReports />
           </div>
         </div>
 
         {/* Row 2: Projects - vertical list */}
-        <div className="flex-shrink-0 min-h-0 overflow-hidden" style={{ height: '280px' }}>
+        <div className="flex-shrink-0 min-h-0 overflow-hidden" style={{ height: 'auto', minHeight: '200px', maxHeight: '280px' }}>
           <ProjectMonitor
             selectedProject={selectedProject}
             onSelectProject={setSelectedProject}
@@ -65,19 +65,19 @@ export function Dashboard() {
         </div>
 
         {/* Row 3: Punch List */}
-        <div className="flex-shrink-0 min-h-0 overflow-hidden" style={{ height: '480px' }}>
+        <div className="flex-shrink-0 min-h-0 overflow-hidden" style={{ height: 'auto', minHeight: '300px', maxHeight: '480px' }}>
           <QueueStatus />
         </div>
 
-        {/* Row 4: 3 columns - Tokens | Activity | Log, max 1000px height */}
-        <div className="grid grid-cols-3 gap-4 flex-1 min-h-0" style={{ maxHeight: '1000px' }}>
-          <div className="h-full min-h-0 overflow-hidden">
+        {/* Row 4: 3 columns - Tokens | Activity | Log, responsive */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
+          <div className="h-full min-h-[250px] overflow-hidden">
             <TokenMonitor selectedProject={selectedProject} />
           </div>
-          <div className="h-full min-h-0 overflow-hidden">
+          <div className="h-full min-h-[250px] overflow-hidden">
             <SystemHealth />
           </div>
-          <div className="h-full min-h-0 overflow-hidden">
+          <div className="h-full min-h-[250px] overflow-hidden">
             <LiveLog />
           </div>
         </div>

@@ -90,3 +90,36 @@ body {
     linear-gradient(90deg, rgba(30, 30, 46, 0.5) 1px, transparent 1px);
   background-size: 20px 20px;
 }
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  html, body {
+    font-size: 14px;
+  }
+  
+  .bg-grid {
+    background-size: 10px 10px;
+  }
+  
+  /* Touch-friendly scrollbars on mobile */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  /* Ensure panels are scrollable on mobile */
+  .custom-scrollbar {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Touch-friendly tap targets */
+@media (pointer: coarse) {
+  button, 
+  [role="button"],
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
