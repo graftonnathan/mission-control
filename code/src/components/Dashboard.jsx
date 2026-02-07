@@ -86,8 +86,8 @@ export function Dashboard() {
         </div>
 
         {/* Row 3: Punch List - fixed 400px height on desktop */}
-        <div className={`min-h-0 overflow-hidden ${isMobile ? 'flex-shrink-0' : 'flex-shrink-0'}`} 
-             style={{ height: 'auto', minHeight: isMobile ? '250px' : '400px' }}>
+        <div className="flex-shrink-0 overflow-hidden" 
+             style={{ height: isMobile ? '250px' : '400px' }}>
           <QueueStatus isMobile={isMobile} />
         </div>
 
