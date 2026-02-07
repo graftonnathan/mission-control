@@ -85,14 +85,15 @@ export function Dashboard() {
           />
         </div>
 
-        {/* Row 3: Punch List */}
-        <div className="flex-shrink-0 min-h-0 overflow-hidden" 
-             style={{ height: 'auto', minHeight: isMobile ? '250px' : '450px' }}>
+        {/* Row 3: Punch List - flex-1 on desktop to fill gap */}
+        <div className={`min-h-0 overflow-hidden ${isMobile ? 'flex-shrink-0' : 'flex-1'}`} 
+             style={{ height: 'auto', minHeight: isMobile ? '250px' : '300px' }}>
           <QueueStatus isMobile={isMobile} />
         </div>
 
-        {/* Row 4: Bottom 3 panels */}
-        <div className={`grid gap-2 md:gap-4 flex-1 min-h-0 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`}>
+        {/* Row 4: Bottom 3 panels - max 1000px height on desktop */}
+        <div className={`grid gap-2 md:gap-4 min-h-0 ${isMobile ? 'grid-cols-1 flex-1' : 'grid-cols-1 md:grid-cols-3'}`}
+             style={{ maxHeight: isMobile ? 'none' : '1000px' }}>
           <div className="h-full min-h-[200px] overflow-hidden">
             <TokenMonitor selectedProject={selectedProject} isMobile={isMobile} />
           </div>
