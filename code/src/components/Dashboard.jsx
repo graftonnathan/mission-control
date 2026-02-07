@@ -152,15 +152,15 @@ function MobileDashboard({ currentTime, selectedProject, onSelectProject }) {
         <QueueStatusSideTabs />
       </div>
 
-      {/* Row 5: Tokens, Recent, Log - Stacked, 200px each */}
+      {/* Row 5: Tokens, Recent, Log - Stacked */}
       <div className="flex flex-col gap-2">
         <div style={{ height: '200px' }}>
           <TokenMonitor selectedProject={selectedProject} />
         </div>
-        <div style={{ height: '200px' }}>
+        <div style={{ height: '400px' }}>
           <SystemHealth />
         </div>
-        <div style={{ height: '200px' }}>
+        <div style={{ height: '400px' }}>
           <LiveLog />
         </div>
       </div>
@@ -209,9 +209,26 @@ function AgentStatusHorizontal() {
   );
 }
 
-// Horizontal Scrolling Project Cards for Mobile
+// Horizontal Scrolling Project Cards for Mobile with Popup Controls
 function ProjectMonitorCards({ onSelectProject }) {
   const { projects, loading, error } = useProjectsHook();
+  const [selectedProjectPopup, setSelectedProjectPopup] = useState(null);
+  const [projectStatus, setProjectStatus] = useState({});
+
+  useEffect(() => {
+    // Fetch status for all projects
+    projects.forEach(async (project) => {
+      try {
+        const response = await fetch(`/api/projects/${encodeURIComponent(project.name)}/status`);
+        if (response.ok) {
+          const status = await response.json();
+          setProjectStatus(prev => ({ ...prev, [project.name]: status }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch status for', project.name);
+      }
+    });
+  }, [projects]);
 
   const getStatusColor = (phase) => {
     switch (phase) {
@@ -225,22 +242,109 @@ function ProjectMonitorCards({ onSelectProject }) {
     }
   };
 
+  const handleAction = async (action, projectName) => {
+    try {
+      if (action === 'pause') {
+        await fetch(`/api/projects/${encodeURIComponent(projectName)}/pause`, { method: 'POST' });
+      } else if (action === 'restart') {
+        await fetch(`/api/projects/${encodeURIComponent(projectName)}/restart`, { method: 'POST' });
+      } else if (action === 'git') {
+        await fetch(`/api/projects/${encodeURIComponent(projectName)}/git`, { method: 'POST' });
+      }
+      // Refresh status
+      const response = await fetch(`/api/projects/${encodeURIComponent(projectName)}/status`);
+      if (response.ok) {
+        const status = await response.json();
+        setProjectStatus(prev => ({ ...prev, [projectName]: status }));
+      }
+    } catch (err) {
+      console.error('Action failed:', err);
+    }
+  };
+
   return (
-    <Panel title="Projects" loading={loading} error={error} className="h-full" flexContent>
-      <div className="flex gap-2 overflow-x-auto h-full py-1">
-        {projects.map((project) => (
-          <button
-            key={project.name}
-            onClick={() => onSelectProject(project.name)}
-            className={`flex-shrink-0 w-32 p-2 rounded border-2 bg-mission-bg/50 text-left ${getStatusColor(project.phase)}`}
-          >
-            <div className="text-xs font-medium text-mission-text truncate">{project.name}</div>
-            <div className="text-[10px] text-mission-muted uppercase">{project.phase}</div>
-            <div className="text-[10px] text-mission-muted">P{project.priority}</div>
-          </button>
-        ))}
-      </div>
-    </Panel>
+    <>
+      <Panel title="Projects" loading={loading} error={error} className="h-full" flexContent>
+        <div className="flex gap-2 overflow-x-auto h-full py-1">
+          {projects.map((project) => (
+            <button
+              key={project.name}
+              onClick={() => setSelectedProjectPopup(project)}
+              className={`flex-shrink-0 w-32 p-2 rounded border-2 bg-mission-bg/50 text-left ${getStatusColor(project.phase)}`}
+            >
+              <div className="text-xs font-medium text-mission-text truncate">{project.name}</div>
+              <div className="text-[10px] text-mission-muted uppercase">{project.phase}</div>
+              <div className="text-[10px] text-mission-muted">P{project.priority}</div>
+            </button>
+          ))}
+        </div>
+      </Panel>
+
+      {/* Project Control Popup */}
+      {selectedProjectPopup && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-mission-panel rounded-lg w-full max-w-sm border border-mission-border p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-mission-text truncate">
+                {selectedProjectPopup.name}
+              </h3>
+              <button 
+                onClick={() => setSelectedProjectPopup(null)}
+                className="text-mission-muted hover:text-mission-text text-lg px-2"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Status */}
+            <div className="mb-4 p-3 bg-mission-bg/50 rounded border border-mission-border/30">
+              <div className="text-[10px] text-mission-muted uppercase mb-1">Status</div>
+              <div className={`text-sm font-medium ${
+                projectStatus[selectedProjectPopup.name]?.running 
+                  ? 'text-status-active' 
+                  : 'text-status-error'
+              }`}>
+                {projectStatus[selectedProjectPopup.name]?.running ? '● Running' : '● Stopped'}
+              </div>
+              <div className="text-xs text-mission-muted mt-1">
+                Phase: {selectedProjectPopup.phase}
+              </div>
+              <div className="text-xs text-mission-muted">
+                Priority: {selectedProjectPopup.priority}
+              </div>
+            </div>
+
+            {/* Control Buttons */}
+            <div className="space-y-2">
+              <button
+                onClick={() => handleAction('pause', selectedProjectPopup.name)}
+                className="w-full py-3 px-4 bg-status-working/20 text-status-working rounded text-sm font-medium hover:bg-status-working/30 active:scale-95 transition-all"
+              >
+                ⏸ Pause Project
+              </button>
+              <button
+                onClick={() => handleAction('restart', selectedProjectPopup.name)}
+                className="w-full py-3 px-4 bg-status-active/20 text-status-active rounded text-sm font-medium hover:bg-status-active/30 active:scale-95 transition-all"
+              >
+                ↻ Restart Project
+              </button>
+              <button
+                onClick={() => handleAction('git', selectedProjectPopup.name)}
+                className="w-full py-3 px-4 bg-blue-500/20 text-blue-400 rounded text-sm font-medium hover:bg-blue-500/30 active:scale-95 transition-all"
+              >
+                ⬆ Git Push
+              </button>
+              <button
+                onClick={() => { onSelectProject(selectedProjectPopup.name); setSelectedProjectPopup(null); }}
+                className="w-full py-3 px-4 bg-mission-border/50 text-mission-text rounded text-sm font-medium hover:bg-mission-border active:scale-95 transition-all"
+              >
+                Select Project
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
