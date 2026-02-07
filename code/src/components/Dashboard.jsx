@@ -9,34 +9,52 @@ import { formatTime } from '../utils/formatters';
 import { useLiveClock } from '../hooks/useLiveClock';
 import { Panel } from './StatusBadge';
 
+// Hook to detect mobile
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+}
+
 export function Dashboard() {
   const currentTime = useLiveClock();
   const [selectedProject, setSelectedProject] = useState(null);
+  const isMobile = useIsMobile();
 
   return (
-    <div className="min-h-screen bg-mission-bg bg-grid p-4 flex flex-col">
+    <div className={`min-h-screen bg-mission-bg bg-grid flex flex-col ${isMobile ? 'p-2 gap-2' : 'p-4 gap-4'}`}>
       {/* Header */}
-      <header className="mb-4 flex flex-col md:flex-row md:items-center justify-between flex-shrink-0 gap-2 md:gap-0">
-        <div className="flex items-center gap-4">
-          <div className="w-3 h-3 rounded-full bg-status-active animate-pulse-slow" />
-          <h1 className="text-xl md:text-2xl font-bold tracking-wider text-mission-text uppercase">
-            Mission Control
+      <header className={`flex flex-col md:flex-row md:items-center justify-between flex-shrink-0 ${isMobile ? 'gap-1 mb-2' : 'gap-2 md:gap-0 mb-4'}`}>
+        <div className="flex items-center gap-3">
+          <div className={`rounded-full bg-status-active animate-pulse-slow ${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
+          <h1 className={`font-bold tracking-wider text-mission-text uppercase ${isMobile ? 'text-lg' : 'text-xl md:text-2xl'}`}>
+            {isMobile ? 'Mission Ctrl' : 'Mission Control'}
           </h1>
         </div>
-        <div className="flex items-center gap-4 md:gap-6">
+        <div className={`flex items-center ${isMobile ? 'gap-3 text-xs' : 'gap-4 md:gap-6'}`}>
           <div className="text-right">
-            <div className="text-xs text-mission-muted uppercase tracking-wider">
-              System Time
+            <div className="text-[10px] md:text-xs text-mission-muted uppercase tracking-wider">
+              Time
             </div>
-            <div className="font-mono text-base md:text-lg text-mission-text">
+            <div className={`font-mono text-mission-text ${isMobile ? 'text-sm' : 'text-base md:text-lg'}`}>
               {formatTime(currentTime)}
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-mission-muted uppercase tracking-wider">
+            <div className="text-[10px] md:text-xs text-mission-muted uppercase tracking-wider">
               Status
             </div>
-            <div className="text-sm font-medium text-status-active">
+            <div className={`font-medium text-status-active ${isMobile ? 'text-xs' : 'text-sm'}`}>
               ONLINE
             </div>
           </div>
@@ -44,55 +62,59 @@ export function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col gap-4 min-h-0 overflow-auto md:overflow-hidden">
+      <div className={`flex-1 flex flex-col min-h-0 overflow-auto ${isMobile ? 'gap-2' : 'gap-4 md:overflow-hidden'}`}>
 
-        {/* Row 1: Agents (narrow) + Agent Reports - responsive layout */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-shrink-0" style={{ height: 'auto', minHeight: '400px' }}>
-          <div className="col-span-1 md:col-span-2 h-full min-h-[150px] md:min-h-0 overflow-hidden">
-            <AgentStatusNarrow />
+        {/* Row 1: Agents + Agent Reports */}
+        <div className={`grid gap-2 md:gap-4 flex-shrink-0 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-12'}`} 
+             style={{ height: 'auto', minHeight: isMobile ? '300px' : '400px' }}>
+          <div className={`h-full overflow-hidden ${isMobile ? 'min-h-[80px]' : 'col-span-1 md:col-span-2 min-h-[150px] md:min-h-0'}`}>
+            <AgentStatusNarrow isMobile={isMobile} />
           </div>
-          <div className="col-span-1 md:col-span-10 h-full min-h-[300px] md:min-h-0 overflow-hidden">
-            <AgentReports />
+          <div className={`h-full overflow-hidden ${isMobile ? 'min-h-[200px]' : 'col-span-1 md:col-span-10 min-h-[300px] md:min-h-0'}`}>
+            <AgentReports isMobile={isMobile} />
           </div>
         </div>
 
-        {/* Row 2: Projects - vertical list */}
-        <div className="flex-shrink-0 min-h-0 overflow-hidden" style={{ height: 'auto', minHeight: '350px' }}>
+        {/* Row 2: Projects */}
+        <div className="flex-shrink-0 min-h-0 overflow-hidden" 
+             style={{ height: 'auto', minHeight: isMobile ? '200px' : '350px' }}>
           <ProjectMonitor
             selectedProject={selectedProject}
             onSelectProject={setSelectedProject}
+            isMobile={isMobile}
           />
         </div>
 
         {/* Row 3: Punch List */}
-        <div className="flex-shrink-0 min-h-0 overflow-hidden" style={{ height: 'auto', minHeight: '450px' }}>
-          <QueueStatus />
+        <div className="flex-shrink-0 min-h-0 overflow-hidden" 
+             style={{ height: 'auto', minHeight: isMobile ? '250px' : '450px' }}>
+          <QueueStatus isMobile={isMobile} />
         </div>
 
-        {/* Row 4: 3 columns - Tokens | Activity | Log, responsive */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
-          <div className="h-full min-h-[350px] overflow-hidden">
-            <TokenMonitor selectedProject={selectedProject} />
+        {/* Row 4: Bottom 3 panels */}
+        <div className={`grid gap-2 md:gap-4 flex-1 min-h-0 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`}>
+          <div className="h-full min-h-[200px] overflow-hidden">
+            <TokenMonitor selectedProject={selectedProject} isMobile={isMobile} />
           </div>
-          <div className="h-full min-h-[350px] overflow-hidden">
-            <SystemHealth />
+          <div className="h-full min-h-[200px] overflow-hidden">
+            <SystemHealth isMobile={isMobile} />
           </div>
-          <div className="h-full min-h-[350px] overflow-hidden">
-            <LiveLog />
+          <div className="h-full min-h-[200px] overflow-hidden">
+            <LiveLog isMobile={isMobile} />
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="mt-4 pt-3 border-t border-mission-border text-center text-xs text-mission-muted flex-shrink-0">
-        OpenClaw Mission Control Dashboard v1.0 • Real-time Workspace Monitor
+      <footer className={`mt-2 pt-2 border-t border-mission-border text-center text-mission-muted flex-shrink-0 ${isMobile ? 'text-[10px]' : 'text-xs mt-4 pt-3'}`}>
+        OpenClaw Mission Control {isMobile ? 'v1.0' : 'Dashboard v1.0 • Real-time Workspace Monitor'}
       </footer>
     </div>
   );
 }
 
 // Narrow Agent List Component
-function AgentStatusNarrow() {
+function AgentStatusNarrow({ isMobile }) {
   const { agents, loading, error, retry } = useAgentsHook();
 
   const getStatusColor = (status) => {
@@ -113,39 +135,33 @@ function AgentStatusNarrow() {
 
   const formatActivity = (agent) => {
     if (!agent.currentTask) return 'idle';
-    const task = agent.currentTask;
-    if (task.includes('fix')) return `fixing ${agent.project || 'bugs'}`;
-    if (task.includes('implement')) return `building ${agent.project || 'features'}`;
-    if (task.includes('build')) return `building ${agent.project || ''}`;
-    if (task.includes('test')) return `testing ${agent.project || ''}`;
-    if (task.includes('plan')) return `planning ${agent.project || ''}`;
-    return task;
+    return agent.project || 'active';
   };
 
   return (
-    <Panel title="Agents" loading={loading} error={error} onRetry={retry} className="h-full" flexContent>
-      <div className="flex flex-col gap-2 overflow-y-auto min-h-0 custom-scrollbar">
+    <Panel title={isMobile ? 'Agents' : 'Agents'} loading={loading} error={error} onRetry={retry} className="h-full" flexContent>
+      <div className={`flex flex-col overflow-y-auto min-h-0 custom-scrollbar ${isMobile ? 'gap-1' : 'gap-2'}`}>
         {agents.length === 0 && !loading && (
-          <div className="text-mission-muted text-sm text-center py-2">
+          <div className={`text-mission-muted text-center py-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
             No agents
           </div>
         )}
         {agents.map((agent) => (
           <div 
             key={agent.id}
-            className="flex items-center gap-2 px-2 py-1.5 rounded border border-mission-border/20 hover:border-mission-border/40 transition-colors"
+            className={`flex items-center gap-2 rounded border border-mission-border/20 hover:border-mission-border/40 transition-colors ${isMobile ? 'px-2 py-1' : 'px-2 py-1.5'}`}
           >
             <div className="relative flex-shrink-0">
-              <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)}`} />
+              <div className={`rounded-full ${getStatusColor(agent.status)} ${isMobile ? 'w-2 h-2' : 'w-2.5 h-2.5'}`} />
               {agent.status === 'working' && (
-                <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)} animate-ping opacity-75`} />
+                <div className={`absolute inset-0 rounded-full ${getStatusColor(agent.status)} animate-ping opacity-75 ${isMobile ? 'w-2 h-2' : 'w-2.5 h-2.5'}`} />
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-mission-text truncate">
+              <div className={`font-medium text-mission-text truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
                 {formatAgentName(agent.name)}
               </div>
-              <div className="text-[10px] text-mission-muted truncate">
+              <div className={`text-mission-muted truncate ${isMobile ? 'text-[9px]' : 'text-[10px]'}`}>
                 {formatActivity(agent)}
               </div>
             </div>

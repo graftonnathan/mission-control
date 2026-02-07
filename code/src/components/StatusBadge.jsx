@@ -18,15 +18,15 @@ export function StatusBadge({ phase, status, children }) {
   );
 }
 
-export function Panel({ title, children, className = '', loading = false, error = null, flexContent = false, onRetry = null }) {
+export function Panel({ title, children, className = '', loading = false, error = null, flexContent = false, onRetry = null, isMobile = false }) {
   return (
     <div className={`bg-mission-panel border border-mission-border rounded-lg overflow-hidden flex flex-col ${className}`}>
-      <div className="px-4 py-3 border-b border-mission-border bg-mission-panel/50 flex-shrink-0">
-        <h3 className="text-sm font-semibold text-mission-text tracking-wide uppercase">
+      <div className={`border-b border-mission-border bg-mission-panel/50 flex-shrink-0 ${isMobile ? 'px-2 py-1.5' : 'px-4 py-3'}`}>
+        <h3 className={`font-semibold text-mission-text tracking-wide uppercase ${isMobile ? 'text-xs' : 'text-sm'}`}>
           {title}
         </h3>
       </div>
-      <div className={`p-4 ${flexContent ? 'flex-1 flex flex-col min-h-0 overflow-hidden' : ''}`}>
+      <div className={`${isMobile ? 'p-2' : 'p-4'} ${flexContent ? 'flex-1 flex flex-col min-h-0 overflow-hidden' : ''}`}>
         {loading && (
           <div className="flex items-center justify-center py-8">
             <div className="w-6 h-6 border-2 border-status-working border-t-transparent rounded-full animate-spin" />
