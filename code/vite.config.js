@@ -872,9 +872,9 @@ function workspaceApiMiddleware() {
             const pid = fs.readFileSync(pidFile, 'utf-8').trim();
             checkCommand = `kill -0 ${pid} 2>/dev/null && echo "running" || echo "stopped"`;
           } else if (projectName === 'Kinectv1') {
-            checkType = 'process';
-            // Check for MaggieHeadless process or WebRTC port 8787
-            checkCommand = `pgrep -f "MaggieHeadless" > /dev/null && echo "running" || (lsof -i :8787 2>/dev/null | grep -q LISTEN && echo "running" || echo "stopped")`;
+            checkType = 'port';
+            // Only check if WebRTC port 8787 is listening (reliable)
+            checkCommand = `lsof -i :8787 2>/dev/null | grep -q LISTEN && echo "running" || echo "stopped"`;
           } else if (fs.existsSync(startScript) || fs.existsSync(backendDir) || fs.existsSync(packageJson)) {
             checkType = 'port';
             // Check if anything is listening on port 8000 (backend) or 5173 (frontend/vite)
