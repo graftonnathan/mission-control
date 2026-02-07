@@ -16,19 +16,19 @@ export function Dashboard() {
   return (
     <div className="min-h-screen bg-mission-bg bg-grid p-4 flex flex-col">
       {/* Header */}
-      <header className="mb-4 flex items-center justify-between flex-shrink-0">
+      <header className="mb-4 flex flex-col md:flex-row md:items-center justify-between flex-shrink-0 gap-2 md:gap-0">
         <div className="flex items-center gap-4">
           <div className="w-3 h-3 rounded-full bg-status-active animate-pulse-slow" />
-          <h1 className="text-2xl font-bold tracking-wider text-mission-text uppercase">
+          <h1 className="text-xl md:text-2xl font-bold tracking-wider text-mission-text uppercase">
             Mission Control
           </h1>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 md:gap-6">
           <div className="text-right">
             <div className="text-xs text-mission-muted uppercase tracking-wider">
               System Time
             </div>
-            <div className="font-mono text-lg text-mission-text">
+            <div className="font-mono text-base md:text-lg text-mission-text">
               {formatTime(currentTime)}
             </div>
           </div>
@@ -47,17 +47,17 @@ export function Dashboard() {
       <div className="flex-1 flex flex-col gap-4 min-h-0 overflow-auto md:overflow-hidden">
 
         {/* Row 1: Agents (narrow) + Agent Reports - responsive layout */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-shrink-0" style={{ height: 'auto', minHeight: '300px', maxHeight: '500px' }}>
-          <div className="col-span-1 md:col-span-2 h-full min-h-0 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-shrink-0" style={{ height: 'auto', minHeight: '400px' }}>
+          <div className="col-span-1 md:col-span-2 h-full min-h-[150px] md:min-h-0 overflow-hidden">
             <AgentStatusNarrow />
           </div>
-          <div className="col-span-1 md:col-span-10 h-full min-h-0 overflow-hidden">
+          <div className="col-span-1 md:col-span-10 h-full min-h-[300px] md:min-h-0 overflow-hidden">
             <AgentReports />
           </div>
         </div>
 
         {/* Row 2: Projects - vertical list */}
-        <div className="flex-shrink-0 min-h-0 overflow-hidden" style={{ height: 'auto', minHeight: '200px', maxHeight: '280px' }}>
+        <div className="flex-shrink-0 min-h-0 overflow-hidden" style={{ height: 'auto', minHeight: '350px' }}>
           <ProjectMonitor
             selectedProject={selectedProject}
             onSelectProject={setSelectedProject}
@@ -65,19 +65,19 @@ export function Dashboard() {
         </div>
 
         {/* Row 3: Punch List */}
-        <div className="flex-shrink-0 min-h-0 overflow-hidden" style={{ height: 'auto', minHeight: '300px', maxHeight: '480px' }}>
+        <div className="flex-shrink-0 min-h-0 overflow-hidden" style={{ height: 'auto', minHeight: '450px' }}>
           <QueueStatus />
         </div>
 
         {/* Row 4: 3 columns - Tokens | Activity | Log, responsive */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
-          <div className="h-full min-h-[250px] overflow-hidden">
+          <div className="h-full min-h-[350px] overflow-hidden">
             <TokenMonitor selectedProject={selectedProject} />
           </div>
-          <div className="h-full min-h-[250px] overflow-hidden">
+          <div className="h-full min-h-[350px] overflow-hidden">
             <SystemHealth />
           </div>
-          <div className="h-full min-h-[250px] overflow-hidden">
+          <div className="h-full min-h-[350px] overflow-hidden">
             <LiveLog />
           </div>
         </div>
