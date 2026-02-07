@@ -18,7 +18,7 @@ export function StatusBadge({ phase, status, children }) {
   );
 }
 
-export function Panel({ title, children, className = '', loading = false, error = null, flexContent = false }) {
+export function Panel({ title, children, className = '', loading = false, error = null, flexContent = false, onRetry = null }) {
   return (
     <div className={`bg-mission-panel border border-mission-border rounded-lg overflow-hidden flex flex-col ${className}`}>
       <div className="px-4 py-3 border-b border-mission-border bg-mission-panel/50 flex-shrink-0">
@@ -33,8 +33,18 @@ export function Panel({ title, children, className = '', loading = false, error 
           </div>
         )}
         {error && !loading && (
-          <div className="text-status-error text-sm py-4">
-            Error: {error}
+          <div className="flex flex-col items-center justify-center py-8 gap-3">
+            <div className="text-status-error text-sm text-center">
+              {error}
+            </div>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="px-3 py-1.5 text-xs font-medium bg-mission-border hover:bg-mission-border/80 text-mission-text rounded transition-colors"
+              >
+                Retry Connection
+              </button>
+            )}
           </div>
         )}
         {!loading && !error && children}

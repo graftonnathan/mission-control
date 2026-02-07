@@ -93,7 +93,7 @@ export function Dashboard() {
 
 // Narrow Agent List Component
 function AgentStatusNarrow() {
-  const { agents, loading, error } = useAgentsHook();
+  const { agents, loading, error, retry } = useAgentsHook();
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -123,7 +123,7 @@ function AgentStatusNarrow() {
   };
 
   return (
-    <Panel title="Agents" loading={loading} error={error} className="h-full" flexContent>
+    <Panel title="Agents" loading={loading} error={error} onRetry={retry} className="h-full" flexContent>
       <div className="flex flex-col gap-2 overflow-y-auto min-h-0 custom-scrollbar">
         {agents.length === 0 && !loading && (
           <div className="text-mission-muted text-sm text-center py-2">
@@ -161,24 +161,54 @@ function useAgentsHook() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [consecutiveErrors, setConsecutiveErrors] = useState(0);
+  const [isPolling, setIsPolling] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    const MAX_ERRORS = 5;
+
     const fetchAgents = async () => {
+      if (!isPolling) return;
+
       try {
         const response = await fetch('/api/agents');
         if (!response.ok) throw new Error('Failed to fetch agents');
         const data = await response.json();
+        if (!isMounted) return;
         setAgents(data);
-        setLoading(false);
+        setError(null);
+        setConsecutiveErrors(0);
       } catch (err) {
+        if (!isMounted) return;
+        const newCount = consecutiveErrors + 1;
+        setConsecutiveErrors(newCount);
         setError(err.message);
-        setLoading(false);
+
+        if (newCount >= MAX_ERRORS) {
+          setIsPolling(false);
+          setError(`Connection lost after ${MAX_ERRORS} retries. Backend may be down.`);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
+
     fetchAgents();
     const interval = setInterval(fetchAgents, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [isPolling, consecutiveErrors]);
 
-  return { agents, loading, error };
+  const retry = () => {
+    setConsecutiveErrors(0);
+    setIsPolling(true);
+    setError(null);
+  };
+
+  return { agents, loading, error, retry, isPolling };
 }

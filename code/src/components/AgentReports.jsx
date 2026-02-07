@@ -4,7 +4,7 @@ import { Panel } from './StatusBadge';
 import { formatDate, formatTime } from '../utils/formatters';
 
 export function AgentReports() {
-  const { reports, loading, error } = useReports();
+  const { reports, loading, error, retry } = useReports();
   const [selectedReport, setSelectedReport] = useState(null);
   const [dividerPosition, setDividerPosition] = useState(33); // 33% for list
   const [isDragging, setIsDragging] = useState(false);
@@ -81,7 +81,7 @@ export function AgentReports() {
   }, [isDragging]);
 
   return (
-    <Panel title="Agent Reports" loading={loading} error={error} className="h-full" flexContent>
+    <Panel title="Agent Reports" loading={loading} error={error} onRetry={retry} className="h-full" flexContent>
       <div ref={containerRef} className="flex flex-1 gap-0 min-h-0">
         {/* Report List - resizable */}
         <div 

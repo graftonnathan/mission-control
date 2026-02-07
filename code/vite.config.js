@@ -1262,26 +1262,29 @@ function workspaceApiMiddleware() {
             const architectSessionKey = 'agent:architect:main';
             const message = `Create a new project "${projectName}".\n\nUser prompt:\n${prompt}\n\nPlease:\n1. Create 01-prompt.md with the project description\n2. Create 02-architecture.md with the design\n3. Create 03-plan.json with the implementation tasks\n4. Set 04-phase to "plan"\n\nProject directory: PROJECTS/${projectName}/`;
 
-            // Use sessions_send to notify architect
-            // Since we can't import sessions_send here, we'll write to a queue file
-            const architectQueueDir = path.join(WORKSPACE_ROOT, 'EXCHANGE', 'architect');
-            fs.mkdirSync(architectQueueDir, { recursive: true });
+            // Create task in EXCHANGE queue for architect to pick up
+            const queueDir = path.join(WORKSPACE_ROOT, 'EXCHANGE', 'queue', 'pending');
+            fs.mkdirSync(queueDir, { recursive: true });
             
-            const taskFile = path.join(architectQueueDir, `${Date.now()}-${projectName}.json`);
+            const taskId = `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const taskFile = path.join(queueDir, `${taskId}.json`);
             fs.writeFileSync(taskFile, JSON.stringify({
-              id: `architect-${Date.now()}`,
+              id: taskId,
+              type: 'plan',
               project: projectName,
-              prompt: message,
+              title: `Create new project: ${projectName}`,
+              description: prompt.substring(0, 200) + (prompt.length > 200 ? '...' : ''),
+              priority: 1,
               createdAt: new Date().toISOString(),
               status: 'pending'
             }, null, 2));
 
-            console.log(`[API] New project "${projectName}" created and queued for architect`);
+            console.log(`[API] New project "${projectName}" created and queued`);
 
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ 
               success: true, 
-              message: `Project "${projectName}" created and sent to architect`,
+              message: `Project "${projectName}" created and queued for processing`,
               project: projectName
             }));
           } catch (e) {
@@ -1312,8 +1315,8 @@ function workspaceApiMiddleware() {
         // Don't exit - let the server continue running
       });
       
-      // Start token tracking polling when server starts
-      startTokenPolling();
+      // Token tracking DISABLED - was causing memory issues/crashes
+      // startTokenPolling();
     }
   };
 }
@@ -1324,6 +1327,10 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    allowedHosts: true
+    allowedHosts: true,
+    watch: {
+      // Ignore PROJECTS directory to prevent crashes when agents create files
+      ignored: ['**/PROJECTS/**', '**/node_modules/**', '**/.git/**']
+    }
   }
 })

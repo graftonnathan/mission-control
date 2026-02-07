@@ -10,7 +10,8 @@ const PHASES = ['plan', 'implement', 'build', 'test', 'fix', 'review', 'designer
 const PROJECT_PORTS = {
   'spec-interpreter': 5174,
   'mission-control': 5173,
-  'Kinectv1': 8787
+  'Kinectv1': 8787,
+  'The Order of the Feathered Fowl': 5176
 };
 
 function ProjectLink({ project }) {
@@ -29,7 +30,7 @@ function ProjectLink({ project }) {
 }
 
 export function ProjectMonitor({ selectedProject, onSelectProject }) {
-  const { projects, loading, error, refresh } = useProjects();
+  const { projects, loading, error, refresh, retry } = useProjects();
   const [editingProject, setEditingProject] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [backendStatuses, setBackendStatuses] = useState({});
@@ -40,18 +41,29 @@ export function ProjectMonitor({ selectedProject, onSelectProject }) {
     const checkStatuses = async () => {
       const statuses = {};
       for (const project of projects) {
-        const status = await getProjectStatus(project.name);
-        statuses[project.name] = status;
-        
-        // Check for status changes
-        const prevStatus = prevStatuses[project.name];
-        if (prevStatus && prevStatus.running !== status?.running) {
-          await logActivity({
-            type: 'status',
-            action: status?.running ? 'online' : 'offline',
-            project: project.name,
-            timestamp: new Date().toISOString()
-          });
+        try {
+          const status = await getProjectStatus(project.name);
+          statuses[project.name] = status;
+
+          // Check for status changes
+          const prevStatus = prevStatuses[project.name];
+          if (prevStatus && prevStatus.running !== status?.running) {
+            try {
+              await logActivity({
+                type: 'status',
+                action: status?.running ? 'online' : 'offline',
+                project: project.name,
+                timestamp: new Date().toISOString()
+              });
+            } catch (logErr) {
+              // Silent fail for activity logging - don't break status polling
+              console.error('Failed to log activity:', logErr);
+            }
+          }
+        } catch (err) {
+          // Silent fail for individual project - continue checking others
+          console.error(`Failed to check status for ${project.name}:`, err);
+          statuses[project.name] = null;
         }
       }
       setPrevStatuses(statuses);
@@ -99,12 +111,16 @@ export function ProjectMonitor({ selectedProject, onSelectProject }) {
     const newBlocked = !project.blocked;
     const result = await setProjectBlocked(project.name, newBlocked);
     if (result) {
-      await logActivity({
-        type: 'project',
-        action: newBlocked ? 'paused' : 'resumed',
-        project: project.name,
-        timestamp: new Date().toISOString()
-      });
+      try {
+        await logActivity({
+          type: 'project',
+          action: newBlocked ? 'paused' : 'resumed',
+          project: project.name,
+          timestamp: new Date().toISOString()
+        });
+      } catch (logErr) {
+        console.error('Failed to log activity:', logErr);
+      }
       await refresh();
     }
     setUpdating(false);
@@ -115,12 +131,16 @@ export function ProjectMonitor({ selectedProject, onSelectProject }) {
     const result = await restartProject(project.name);
     if (result) {
       console.log(`Restarted ${project.name}:`, result.message);
-      await logActivity({
-        type: 'project',
-        action: 'restarted',
-        project: project.name,
-        timestamp: new Date().toISOString()
-      });
+      try {
+        await logActivity({
+          type: 'project',
+          action: 'restarted',
+          project: project.name,
+          timestamp: new Date().toISOString()
+        });
+      } catch (logErr) {
+        console.error('Failed to log activity:', logErr);
+      }
     }
     setUpdating(false);
   };
@@ -130,18 +150,22 @@ export function ProjectMonitor({ selectedProject, onSelectProject }) {
     const result = await pushProjectToGit(project.name);
     if (result) {
       console.log(`Pushed ${project.name}:`, result.message);
-      await logActivity({
-        type: 'project',
-        action: 'pushed',
-        project: project.name,
-        timestamp: new Date().toISOString()
-      });
+      try {
+        await logActivity({
+          type: 'project',
+          action: 'pushed',
+          project: project.name,
+          timestamp: new Date().toISOString()
+        });
+      } catch (logErr) {
+        console.error('Failed to log activity:', logErr);
+      }
     }
     setUpdating(false);
   };
 
   return (
-    <Panel title="Projects" loading={loading} error={error} className="h-full" flexContent>
+    <Panel title="Projects" loading={loading} error={error} onRetry={retry} className="h-full" flexContent>
       <div className="h-full overflow-y-auto custom-scrollbar space-y-2">
         {sortedProjects.length === 0 && !loading && (
           <div className="text-mission-muted text-sm text-center py-4">

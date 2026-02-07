@@ -82,7 +82,7 @@ function TaskCard({ task, onClaim, onComplete, onDelete, showActions }) {
 }
 
 export function TaskMatrix({ selectedProject }) {
-  const { tasks, loading, error, createTask, claimTask, completeTask, deleteTask } = useExchangeTasks(selectedProject);
+  const { tasks, loading, error, retry, createTask, claimTask, completeTask, deleteTask } = useExchangeTasks(selectedProject);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTask, setNewTask] = useState({
     title: '',
@@ -107,7 +107,7 @@ export function TaskMatrix({ selectedProject }) {
   };
 
   return (
-    <Panel title="Task Matrix" loading={loading} error={error} className="h-full" flexContent>
+    <Panel title="Task Matrix" loading={loading} error={error} onRetry={retry} className="h-full" flexContent>
       {/* Stats Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-mission-border/30">
         <div className="flex items-center gap-4">

@@ -36,10 +36,10 @@ function getActivityColor(action) {
 }
 
 export function SystemHealth() {
-  const { history, loading, error } = useActivityHistory();
+  const { history, loading, error, retry } = useActivityHistory();
 
   return (
-    <Panel title="Recent Activity" loading={loading} error={error} className="h-full" flexContent>
+    <Panel title="Recent Activity" loading={loading} error={error} onRetry={retry} className="h-full" flexContent>
       <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar space-y-1">
         {history.length === 0 && !loading && (
           <div className="text-mission-muted/60 text-xs text-center py-8">

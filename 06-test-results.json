@@ -1,15 +1,59 @@
 {
-  "timestamp": "2026-02-06T20:55:00Z",
+  "timestamp": "2026-02-07T01:56:00-05:00",
   "success": true,
-  "tests_run": 6,
-  "tests_passed": 6,
+  "tests_run": 9,
+  "tests_passed": 9,
   "tests_failed": 0,
+  "lan_accessible": true,
+  "screenshots": [
+    "screenshots/01-dashboard-full.png",
+    "screenshots/02-dashboard-mobile.png"
+  ],
   "results": [
-    {"test": "Health", "status": "pass", "evidence": "healthy"},
-    {"test": "Projects", "status": "pass", "evidence": "3 projects"},
-    {"test": "Agents", "status": "pass", "evidence": "5 agents"},
-    {"test": "Tokens", "status": "pass", "evidence": "235,115,680"},
-    {"test": "LAN", "status": "pass", "evidence": "HTTP 200"},
-    {"test": "Server", "status": "pass", "evidence": "Port 5173"}
+    {
+      "test": "Server Running - Port 5173",
+      "status": "pass",
+      "evidence": "lsof confirms node process listening on *:5173"
+    },
+    {
+      "test": "LAN Accessibility - HTTP 200",
+      "status": "pass", 
+      "evidence": "curl http://192.168.1.8:5173/ returns HTML with status 200"
+    },
+    {
+      "test": "API /projects",
+      "status": "pass",
+      "evidence": "Returns 3 projects: Kinectv1(fix), mission-control(test), spec-interpreter(complete)"
+    },
+    {
+      "test": "API /agents",
+      "status": "pass",
+      "evidence": "Returns 5 agents: architect(idle), builder(idle), designer(idle), dummy(working), ed(idle)"
+    },
+    {
+      "test": "API /queue",
+      "status": "pass",
+      "evidence": "Returns empty queues (backlog, claimed, completed)"
+    },
+    {
+      "test": "API /tokens",
+      "status": "pass",
+      "evidence": "Returns grandTotal: 305,905,322 tokens, lastUpdated timestamp present"
+    },
+    {
+      "test": "API /reports",
+      "status": "pass",
+      "evidence": "Returns 30+ recent reports from exchange and memory sources"
+    },
+    {
+      "test": "Dashboard Screenshot - Desktop",
+      "status": "pass",
+      "evidence": "screenshots/01-dashboard-full.png captured (358KB, 1920x2445)"
+    },
+    {
+      "test": "Dashboard Screenshot - Mobile",
+      "status": "pass",
+      "evidence": "screenshots/02-dashboard-mobile.png captured (267KB, responsive layout)"
+    }
   ]
 }

@@ -2,7 +2,7 @@ import { useLiveLog } from '../hooks/useLiveLog';
 import { Panel } from './StatusBadge';
 
 export function LiveLog() {
-  const { events, loading, error } = useLiveLog();
+  const { events, loading, error, retry } = useLiveLog();
 
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '--:--:--';
@@ -22,7 +22,7 @@ export function LiveLog() {
   };
 
   return (
-    <Panel title="Log" loading={loading} error={error} className="h-full" flexContent>
+    <Panel title="Log" loading={loading} error={error} onRetry={retry} className="h-full" flexContent>
       <div className="flex-1 overflow-y-auto font-mono text-xs leading-tight min-h-0 pr-1 custom-scrollbar">
         {events.length === 0 && !loading && (
           <div className="text-mission-muted/50 text-center py-4">

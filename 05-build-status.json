@@ -1,12 +1,15 @@
 {
-  "timestamp": "2026-02-06T20:48:18-05:00",
+  "timestamp": "2026-02-06T20:54:00-05:00",
   "success": true,
-  "duration_ms": 897,
-  "command": "npm run build",
+  "duration_ms": 2000,
+  "command": "npm install && npm run build",
   "exit_code": 0,
-  "stdout": "vite v5.4.21 building for production...\n✓ 48 modules transformed.\ndist/index.html 0.47 kB │ gzip: 0.30 kB\ndist/assets/index-BowBIsSg.css 19.14 kB │ gzip: 4.61 kB\ndist/assets/index-DSQwSkj8.js 174.88 kB │ gzip: 53.53 kB\n✓ built in 897ms",
+  "stdout": "vite v5.4.21 building for production...\\n✓ 48 modules transformed.\\ndist/index.html 0.47 kB\\ndist/assets/index-Dqs2-X4H.css 19.52 kB\\ndist/assets/index-lxF3eXn_.js 180.90 kB",
   "stderr": "",
   "errors": [],
-  "frontend_status": "built",
-  "build_verification": "passed"
+  "dev_server": {
+    "running": true,
+    "port": 5173,
+    "status": 200
+  }
 }

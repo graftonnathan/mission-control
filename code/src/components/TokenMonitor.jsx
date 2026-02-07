@@ -4,7 +4,7 @@ import { formatTokens, formatCurrency } from '../utils/formatters';
 import { calculateCost } from '../utils/constants';
 
 export function TokenMonitor({ selectedProject }) {
-  const { projectList, totalInput, totalOutput, totalCost, loading, error } = useTokens();
+  const { projectList, totalInput, totalOutput, totalCost, loading, error, retry } = useTokens();
 
   // If a project is selected, show detailed view for that project
   const displayProject = selectedProject
@@ -12,7 +12,7 @@ export function TokenMonitor({ selectedProject }) {
     : null;
 
   return (
-    <Panel title={displayProject ? `Tokens: ${displayProject.name}` : 'Tokens'} loading={loading} error={error} className="h-full" flexContent>
+    <Panel title={displayProject ? `Tokens: ${displayProject.name}` : 'Tokens'} loading={loading} error={error} onRetry={retry} className="h-full" flexContent>
       {displayProject ? (
         // Project-specific detailed view
         <div className="space-y-3 flex-1 overflow-y-auto min-h-0">
