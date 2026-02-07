@@ -8,7 +8,10 @@ export function QueueStatus() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newProjectPrompt, setNewProjectPrompt] = useState('');
+  const [newProjectName, setNewProjectName] = useState('');
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -87,6 +90,46 @@ export function QueueStatus() {
     if (result) await loadTasks(false); // Silent refresh after deleting
   };
 
+  const handleNewProject = async (e) => {
+    e.preventDefault();
+    if (!newProjectName || !newProjectPrompt) {
+      setError('Please enter both project name and prompt');
+      return;
+    }
+    
+    setSubmitting(true);
+    setError(null);
+    
+    try {
+      // Send prompt to architect agent via sessions_send API
+      const response = await fetch('/api/architect/prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectName: newProjectName,
+          prompt: newProjectPrompt
+        })
+      });
+      
+      if (response.ok) {
+        setShowNewProjectModal(false);
+        setNewProjectName('');
+        setNewProjectPrompt('');
+        // Refresh projects list
+        const projects = await scanProjects();
+        const projectNames = projects.map(p => p.name).sort();
+        setAllProjects(projectNames);
+      } else {
+        const data = await response.json();
+        setError(data?.error || 'Failed to send prompt to architect');
+      }
+    } catch (err) {
+      setError(err.message || 'An error occurred');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <Panel title="Punch List" loading={loading} className="h-full" flexContent>
       <div className="flex flex-col h-full min-h-0">
@@ -114,6 +157,12 @@ export function QueueStatus() {
             className="px-3 py-1.5 bg-status-active/20 text-status-active text-xs rounded hover:bg-status-active/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
             + Add Task
+          </button>
+          <button
+            onClick={() => setShowNewProjectModal(true)}
+            className="px-3 py-1.5 bg-purple-500/20 text-purple-400 text-xs rounded hover:bg-purple-500/30 transition-colors whitespace-nowrap"
+          >
+            + New Project
           </button>
         </div>
 
@@ -148,6 +197,68 @@ export function QueueStatus() {
           </div>
         </div>
       </div>
+
+      {/* New Project Modal */}
+      {showNewProjectModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-mission-panel rounded-lg p-8 w-[700px] border border-mission-border">
+            <h3 className="text-mission-text font-medium mb-4">Create New Project</h3>
+            <p className="text-xs text-mission-muted mb-4">
+              This will send a prompt to the Architect agent to create a new project.
+            </p>
+            
+            {error && (
+              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded text-red-300 text-sm">
+                {error}
+              </div>
+            )}
+            
+            <form onSubmit={handleNewProject} className="space-y-4">
+              <div>
+                <label className="text-xs text-mission-muted block mb-1">Project Name</label>
+                <input
+                  type="text"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  className="w-full bg-mission-bg border border-mission-border rounded px-4 py-2 text-sm text-mission-text focus:border-purple-500 focus:outline-none"
+                  placeholder="my-new-project"
+                  required
+                  autoFocus
+                  disabled={submitting}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-mission-muted block mb-1">Prompt for Architect</label>
+                <textarea
+                  value={newProjectPrompt}
+                  onChange={(e) => setNewProjectPrompt(e.target.value)}
+                  className="w-full bg-mission-bg border border-mission-border rounded px-4 py-4 text-sm text-mission-text focus:border-purple-500 focus:outline-none h-48 resize-none"
+                  placeholder="Describe what you want to build..."
+                  required
+                  disabled={submitting}
+                />
+              </div>
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 px-4 py-3 bg-purple-500/20 text-purple-400 text-sm rounded hover:bg-purple-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? 'Sending to Architect...' : 'Send to Architect'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNewProjectModal(false)}
+                  disabled={submitting}
+                  className="px-4 py-3 text-mission-muted text-sm hover:text-mission-text transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Add Task Modal */}
       {showAddModal && (

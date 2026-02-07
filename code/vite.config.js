@@ -871,6 +871,10 @@ function workspaceApiMiddleware() {
             checkType = 'pid';
             const pid = fs.readFileSync(pidFile, 'utf-8').trim();
             checkCommand = `kill -0 ${pid} 2>/dev/null && echo "running" || echo "stopped"`;
+          } else if (projectName === 'Kinectv1') {
+            checkType = 'process';
+            // Check for MaggieHeadless process or WebRTC port 8787
+            checkCommand = `pgrep -f "MaggieHeadless" > /dev/null && echo "running" || (lsof -i :8787 2>/dev/null | grep -q LISTEN && echo "running" || echo "stopped")`;
           } else if (fs.existsSync(startScript) || fs.existsSync(backendDir) || fs.existsSync(packageJson)) {
             checkType = 'port';
             // Check if anything is listening on port 8000 (backend) or 5173 (frontend/vite)
@@ -896,7 +900,7 @@ function workspaceApiMiddleware() {
             
             if (checkType === 'pm2') {
               isRunning = stdout.includes('online') && !stdout.includes('errored') && !stdout.includes('stopped');
-            } else if (checkType === 'pid') {
+            } else if (checkType === 'pid' || checkType === 'process') {
               isRunning = stdout.trim() === 'running';
             } else if (checkType === 'port') {
               // For port check, if we got any output, something is listening
@@ -1213,6 +1217,79 @@ function workspaceApiMiddleware() {
           res.statusCode = 500;
           res.end(JSON.stringify({ error: 'Failed to delete task' }));
         }
+      });
+
+      // POST /api/architect/prompt - send prompt to architect agent
+      server.middlewares.use('/api/architect/prompt', (req, res, next) => {
+        if (req.method !== 'POST') return next();
+
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+          try {
+            const { projectName, prompt } = JSON.parse(body);
+            
+            if (!projectName || !prompt) {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: 'Project name and prompt required' }));
+              return;
+            }
+
+            // Create project directory structure
+            const projectDir = path.join(WORKSPACE_ROOT, 'PROJECTS', projectName);
+            const codeDir = path.join(projectDir, 'code');
+            
+            if (fs.existsSync(projectDir)) {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: 'Project already exists' }));
+              return;
+            }
+
+            // Create directories
+            fs.mkdirSync(projectDir, { recursive: true });
+            fs.mkdirSync(codeDir, { recursive: true });
+
+            // Create initial project files
+            fs.writeFileSync(path.join(projectDir, '01-prompt.md'), prompt);
+            fs.writeFileSync(path.join(projectDir, '04-phase'), 'plan');
+            fs.writeFileSync(path.join(projectDir, '05-priority'), '5');
+            fs.writeFileSync(path.join(projectDir, '03-plan.json'), JSON.stringify({
+              project: projectName,
+              tasks: []
+            }, null, 2));
+
+            // Send message to architect agent
+            const architectSessionKey = 'agent:architect:main';
+            const message = `Create a new project "${projectName}".\n\nUser prompt:\n${prompt}\n\nPlease:\n1. Create 01-prompt.md with the project description\n2. Create 02-architecture.md with the design\n3. Create 03-plan.json with the implementation tasks\n4. Set 04-phase to "plan"\n\nProject directory: PROJECTS/${projectName}/`;
+
+            // Use sessions_send to notify architect
+            // Since we can't import sessions_send here, we'll write to a queue file
+            const architectQueueDir = path.join(WORKSPACE_ROOT, 'EXCHANGE', 'architect');
+            fs.mkdirSync(architectQueueDir, { recursive: true });
+            
+            const taskFile = path.join(architectQueueDir, `${Date.now()}-${projectName}.json`);
+            fs.writeFileSync(taskFile, JSON.stringify({
+              id: `architect-${Date.now()}`,
+              project: projectName,
+              prompt: message,
+              createdAt: new Date().toISOString(),
+              status: 'pending'
+            }, null, 2));
+
+            console.log(`[API] New project "${projectName}" created and queued for architect`);
+
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ 
+              success: true, 
+              message: `Project "${projectName}" created and sent to architect`,
+              project: projectName
+            }));
+          } catch (e) {
+            console.error('[API] Error creating project:', e);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: 'Failed to create project: ' + e.message }));
+          }
+        });
       });
       
       // Clean up token polling on server close

@@ -10,7 +10,7 @@ const PHASES = ['plan', 'implement', 'build', 'test', 'fix', 'review', 'designer
 const PROJECT_PORTS = {
   'spec-interpreter': 5174,
   'mission-control': 5173,
-  'Kinectv1': 5175
+  'Kinectv1': 8787
 };
 
 function ProjectLink({ project }) {
