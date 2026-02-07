@@ -132,8 +132,8 @@ function MobileDashboard({ currentTime, selectedProject, onSelectProject }) {
         </div>
       </header>
 
-      {/* Row 1: Agents - Horizontal across top */}
-      <div className="flex-shrink-0" style={{ height: '60px' }}>
+      {/* Row 1: Agents - Auto height to show all */}
+      <div className="flex-shrink-0">
         <AgentStatusHorizontal />
       </div>
 
@@ -142,25 +142,25 @@ function MobileDashboard({ currentTime, selectedProject, onSelectProject }) {
         <AgentReports isMobile />
       </div>
 
-      {/* Row 3: Projects - Horizontal scrolling cards */}
-      <div className="flex-shrink-0" style={{ height: '120px' }}>
+      {/* Row 3: Projects - Horizontal scrolling cards, full height */}
+      <div className="flex-shrink-0" style={{ height: '160px' }}>
         <ProjectMonitorCards onSelectProject={onSelectProject} />
       </div>
 
-      {/* Row 4: Punch List - Tabs on left */}
+      {/* Row 4: Punch List - Tabs on left with buttons */}
       <div className="flex-shrink-0" style={{ height: '350px' }}>
         <QueueStatusSideTabs />
       </div>
 
-      {/* Row 5: Tokens, Recent, Log - Stacked, 400px each */}
+      {/* Row 5: Tokens, Recent, Log - Stacked, 200px each */}
       <div className="flex flex-col gap-2">
-        <div style={{ height: '400px' }}>
+        <div style={{ height: '200px' }}>
           <TokenMonitor selectedProject={selectedProject} />
         </div>
-        <div style={{ height: '400px' }}>
+        <div style={{ height: '200px' }}>
           <SystemHealth />
         </div>
-        <div style={{ height: '400px' }}>
+        <div style={{ height: '200px' }}>
           <LiveLog />
         </div>
       </div>
@@ -173,7 +173,7 @@ function MobileDashboard({ currentTime, selectedProject, onSelectProject }) {
   );
 }
 
-// Horizontal Agent Status for Mobile
+// Horizontal Agent Status for Mobile - wraps to show all
 function AgentStatusHorizontal() {
   const { agents, loading, error } = useAgentsHook();
 
@@ -194,11 +194,11 @@ function AgentStatusHorizontal() {
 
   return (
     <Panel title="Agents" loading={loading} error={error} className="h-full" flexContent>
-      <div className="flex gap-3 overflow-x-auto h-full items-center px-1">
+      <div className="flex flex-wrap gap-2 p-1">
         {agents.map((agent) => (
           <div 
             key={agent.id}
-            className="flex items-center gap-1.5 px-2 py-1 rounded border border-mission-border/20 bg-mission-bg/30 flex-shrink-0"
+            className="flex items-center gap-1.5 px-2 py-1 rounded border border-mission-border/20 bg-mission-bg/30"
           >
             <div className={`w-2 h-2 rounded-full ${getStatusColor(agent.status)}`} />
             <span className="text-xs text-mission-text">{formatAgentName(agent.name)}</span>
@@ -244,12 +244,19 @@ function ProjectMonitorCards({ onSelectProject }) {
   );
 }
 
-// Punch List with Side Tabs for Mobile
+// Punch List with Side Tabs for Mobile - includes Add/New Project buttons
 function QueueStatusSideTabs() {
   const [tasks, setTasks] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectPrompt, setNewProjectPrompt] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -260,7 +267,6 @@ function QueueStatusSideTabs() {
         if (projectNames.length > 0 && !selectedProject) {
           setSelectedProject(projectNames[0]);
         }
-        
         const allTasks = await getExchangeTasks();
         setTasks(allTasks || []);
         setLoading(false);
@@ -274,47 +280,174 @@ function QueueStatusSideTabs() {
 
   const projectTasks = tasks.filter(t => t.project === selectedProject && t.queueStatus === 'pending');
 
+  const handleAddTask = async (e) => {
+    e.preventDefault();
+    if (!newTaskTitle || !selectedProject) return;
+    setSubmitting(true);
+    try {
+      await fetch('/api/exchange/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTaskTitle, project: selectedProject, createdBy: 'marcus' })
+      });
+      setShowAddModal(false);
+      setNewTaskTitle('');
+      const allTasks = await getExchangeTasks();
+      setTasks(allTasks || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleNewProject = async (e) => {
+    e.preventDefault();
+    if (!newProjectName || !newProjectPrompt) return;
+    setSubmitting(true);
+    try {
+      await fetch('/api/architect/prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectName: newProjectName, prompt: newProjectPrompt })
+      });
+      setShowNewProjectModal(false);
+      setNewProjectName('');
+      setNewProjectPrompt('');
+      const projects = await scanProjects();
+      setAllProjects(projects.map(p => p.name).sort());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <div className="bg-mission-panel border border-mission-border rounded-lg h-full flex flex-col overflow-hidden">
-      <div className="px-2 py-1.5 border-b border-mission-border bg-mission-panel/50">
-        <h3 className="text-xs font-semibold text-mission-text uppercase">Punch List</h3>
-      </div>
-      <div className="flex-1 flex min-h-0">
-        {/* Tabs on left */}
-        <div className="w-20 border-r border-mission-border/30 overflow-y-auto py-1">
-          {allProjects.map(project => (
-            <button
-              key={project}
-              onClick={() => setSelectedProject(project)}
-              className={`w-full text-left px-1.5 py-1 text-[10px] truncate transition-colors ${
-                selectedProject === project
-                  ? 'bg-status-active/20 text-status-active'
-                  : 'text-mission-muted hover:bg-mission-bg/30'
-              }`}
-            >
-              {project.substring(0, 10)}
-            </button>
-          ))}
+    <>
+      <div className="bg-mission-panel border border-mission-border rounded-lg h-full flex flex-col overflow-hidden">
+        <div className="px-2 py-1.5 border-b border-mission-border bg-mission-panel/50">
+          <h3 className="text-xs font-semibold text-mission-text uppercase">Punch List</h3>
         </div>
-        
-        {/* Task list */}
-        <div className="flex-1 overflow-y-auto p-2">
-          {selectedProject && projectTasks.length === 0 && (
-            <div className="text-mission-muted/60 text-[10px] text-center py-4">
-              No items
-            </div>
-          )}
-          <div className="space-y-1">
-            {projectTasks.map((task, idx) => (
-              <div key={task.id || idx} className="p-1.5 bg-mission-bg/30 rounded border border-mission-border/20">
-                <div className="text-[10px] text-mission-text leading-tight">{task.title}</div>
-                <div className="text-[9px] text-mission-muted mt-0.5">{task.type}</div>
-              </div>
+        <div className="flex-1 flex min-h-0">
+          {/* Tabs on left with buttons */}
+          <div className="w-24 border-r border-mission-border/30 overflow-y-auto py-1 flex flex-col">
+            {allProjects.map(project => (
+              <button
+                key={project}
+                onClick={() => setSelectedProject(project)}
+                className={`w-full text-left px-1.5 py-1 text-[10px] truncate transition-colors ${
+                  selectedProject === project
+                    ? 'bg-status-active/20 text-status-active'
+                    : 'text-mission-muted hover:bg-mission-bg/30'
+                }`}
+              >
+                {project.substring(0, 12)}
+              </button>
             ))}
+            <div className="mt-auto pt-2 border-t border-mission-border/30">
+              <button
+                onClick={() => setShowAddModal(true)}
+                disabled={!selectedProject}
+                className="w-full px-1.5 py-1 bg-status-active/20 text-status-active text-[9px] rounded mb-1 disabled:opacity-50"
+              >
+                + Add
+              </button>
+              <button
+                onClick={() => setShowNewProjectModal(true)}
+                className="w-full px-1.5 py-1 bg-purple-500/20 text-purple-400 text-[9px] rounded"
+              >
+                + New
+              </button>
+            </div>
+          </div>
+          
+          {/* Task list */}
+          <div className="flex-1 overflow-y-auto p-2">
+            {loading && <div className="text-[10px] text-mission-muted text-center py-4">Loading...</div>}
+            {!loading && selectedProject && projectTasks.length === 0 && (
+              <div className="text-mission-muted/60 text-[10px] text-center py-4">
+                No items for {selectedProject.substring(0, 15)}
+              </div>
+            )}
+            <div className="space-y-1">
+              {projectTasks.map((task, idx) => (
+                <div key={task.id || idx} className="p-1.5 bg-mission-bg/30 rounded border border-mission-border/20">
+                  <div className="text-[10px] text-mission-text leading-tight">{task.title}</div>
+                  <div className="text-[9px] text-mission-muted mt-0.5">{task.type}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Add Task Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-mission-panel rounded-lg p-4 w-full max-w-md border border-mission-border">
+            <h3 className="text-mission-text font-medium mb-2 text-sm">Add Task</h3>
+            <div className="text-[10px] text-mission-muted mb-2">Project: {selectedProject}</div>
+            {error && <div className="text-[10px] text-red-400 mb-2">{error}</div>}
+            <form onSubmit={handleAddTask}>
+              <textarea
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                className="w-full bg-mission-bg border border-mission-border rounded px-2 py-2 text-xs text-mission-text h-24 resize-none mb-2"
+                placeholder="What needs to be done?"
+                required
+                disabled={submitting}
+              />
+              <div className="flex gap-2">
+                <button type="submit" disabled={submitting} className="flex-1 px-3 py-2 bg-status-active/20 text-status-active text-xs rounded">
+                  {submitting ? 'Adding...' : 'Add'}
+                </button>
+                <button type="button" onClick={() => setShowAddModal(false)} className="px-3 py-2 text-mission-muted text-xs">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* New Project Modal */}
+      {showNewProjectModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-mission-panel rounded-lg p-4 w-full max-w-md border border-mission-border">
+            <h3 className="text-mission-text font-medium mb-2 text-sm">New Project</h3>
+            {error && <div className="text-[10px] text-red-400 mb-2">{error}</div>}
+            <form onSubmit={handleNewProject} className="space-y-2">
+              <input
+                type="text"
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                className="w-full bg-mission-bg border border-mission-border rounded px-2 py-2 text-xs text-mission-text"
+                placeholder="Project name"
+                required
+                disabled={submitting}
+              />
+              <textarea
+                value={newProjectPrompt}
+                onChange={(e) => setNewProjectPrompt(e.target.value)}
+                className="w-full bg-mission-bg border border-mission-border rounded px-2 py-2 text-xs text-mission-text h-24 resize-none"
+                placeholder="Describe what to build..."
+                required
+                disabled={submitting}
+              />
+              <div className="flex gap-2">
+                <button type="submit" disabled={submitting} className="flex-1 px-3 py-2 bg-purple-500/20 text-purple-400 text-xs rounded">
+                  {submitting ? 'Creating...' : 'Create'}
+                </button>
+                <button type="button" onClick={() => setShowNewProjectModal(false)} className="px-3 py-2 text-mission-muted text-xs">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
