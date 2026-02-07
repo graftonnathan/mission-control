@@ -85,9 +85,9 @@ export function Dashboard() {
           />
         </div>
 
-        {/* Row 3: Punch List - flex-1 on desktop to fill gap */}
-        <div className={`min-h-0 overflow-hidden ${isMobile ? 'flex-shrink-0' : 'flex-1'}`} 
-             style={{ height: 'auto', minHeight: isMobile ? '250px' : '300px' }}>
+        {/* Row 3: Punch List - fixed 400px height on desktop */}
+        <div className={`min-h-0 overflow-hidden ${isMobile ? 'flex-shrink-0' : 'flex-shrink-0'}`} 
+             style={{ height: 'auto', minHeight: isMobile ? '250px' : '400px' }}>
           <QueueStatus isMobile={isMobile} />
         </div>
 
