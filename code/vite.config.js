@@ -1188,20 +1188,38 @@ function workspaceApiMiddleware() {
         try {
           let deleted = false;
           
-          // Remove from all queue locations
+          // Search through all queue directories for matching task ID
           for (const dirPath of Object.values(QUEUE_DIRS)) {
-            const filePath = path.join(dirPath, `${taskId}.json`);
-            if (fs.existsSync(filePath)) {
-              fs.unlinkSync(filePath);
-              deleted = true;
+            const entries = readDir(dirPath);
+            for (const entry of entries) {
+              if (entry.isFile() && entry.name.endsWith('.json')) {
+                const filePath = path.join(dirPath, entry.name);
+                const content = readFile(filePath);
+                if (content) {
+                  const task = JSON.parse(content);
+                  if (task.id === taskId) {
+                    fs.unlinkSync(filePath);
+                    deleted = true;
+                  }
+                }
+              }
             }
           }
           
-          // Remove from tasks dir
-          const tasksPath = path.join(TASKS_DIR, `${taskId}.json`);
-          if (fs.existsSync(tasksPath)) {
-            fs.unlinkSync(tasksPath);
-            deleted = true;
+          // Also check tasks dir by ID
+          const tasksEntries = readDir(TASKS_DIR);
+          for (const entry of tasksEntries) {
+            if (entry.isFile() && entry.name.endsWith('.json')) {
+              const filePath = path.join(TASKS_DIR, entry.name);
+              const content = readFile(filePath);
+              if (content) {
+                const task = JSON.parse(content);
+                if (task.id === taskId) {
+                  fs.unlinkSync(filePath);
+                  deleted = true;
+                }
+              }
+            }
           }
           
           if (!deleted) {
