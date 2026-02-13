@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #0a0a0f;
+  color: #e0e0ff;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Scrollbar styling - global */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #13131f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a3e;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a4e;
+}
+
+/* Custom scrollbar for panels - visible and styled */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a5e #1a1a2e;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  display: block !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1a1a2e;
+  border-radius: 4px;
+  border: 1px solid #2a2a3e;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #4a4a5e;
+  border-radius: 4px;
+  border: 1px solid #5a5a6e;
+  min-height: 40px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #5a5a6e;
+}
+
+.custom-scrollbar::-webkit-scrollbar-corner {
+  background: #1a1a2e;
+}
+
+/* Animation for live indicator */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Grid pattern background */
+.bg-grid {
+  background-image: 
+    linear-gradient(rgba(30, 30, 46, 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 30, 46, 0.5) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  html, body {
+    font-size: 16px;
+  }
+  
+  .bg-grid {
+    background-size: 10px 10px;
+  }
+  
+  /* Touch-friendly scrollbars on mobile */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  /* Ensure panels are scrollable on mobile */
+  .custom-scrollbar {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Touch-friendly tap targets */
+@media (pointer: coarse) {
+  button, 
+  [role="button"],
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

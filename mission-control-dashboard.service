@@ -1,0 +1,17 @@
+[Unit]
+Description=Mission Control Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=molten
+WorkingDirectory=/home/molten/.openclaw/workspace/PROJECTS/mission-control
+ExecStart=/usr/bin/npm run dev -- --host 0.0.0.0
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=development
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
