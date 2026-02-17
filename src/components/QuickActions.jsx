@@ -725,16 +725,16 @@ export function QuickActions({ selectedProject, onProjectDeleted }) {
       {/* Add Task Modal */}
       {showAddTask && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-mission-panel rounded-lg p-6 w-full max-w-lg border border-mission-border">
+          <div className="bg-mission-panel rounded-lg p-6 w-[612px] min-h-[600px] border border-mission-border flex flex-col">
             <h3 className="text-mission-text font-medium mb-1 text-sm">Add Task</h3>
             <p className="text-xs text-mission-muted mb-4">{selectedProject.name}</p>
-            <form onSubmit={handleAddTask} className="space-y-4">
-              <div>
+            <form onSubmit={handleAddTask} className="space-y-4 flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col min-h-0">
                 <label className="text-xs text-mission-muted block mb-1">Task Description</label>
                 <textarea
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
-                  className="w-full bg-mission-bg border border-mission-border rounded px-3 py-2 text-sm text-mission-text h-32 resize-none focus:border-status-active focus:outline-none"
+                  className="w-full flex-1 min-h-0 bg-mission-bg border border-mission-border rounded px-3 py-2 text-sm text-mission-text resize-none focus:border-status-active focus:outline-none"
                   placeholder="Describe what needs to be done..."
                   required
                   disabled={submitting}
