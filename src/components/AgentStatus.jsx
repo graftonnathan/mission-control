@@ -1,24 +1,40 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useAgents } from '../hooks/useAgents';
 import { Panel } from './StatusBadge';
 
-// Pin configuration - agents listed here will appear at the bottom
-const PINNED_AGENT_IDS = ['spawner'];
+// Pipeline order for agents - spawner is always pinned at the bottom
+const AGENT_ORDER = ['planner', 'architect', 'designer', 'ed', 'builder', 'dummy'];
+const PINNED_AGENT_ID = 'spawner';
 
 export function AgentStatus() {
   const { agents, loading, error } = useAgents();
 
-  // Sort agents: regular agents first (in defined order), then pinned agents at end
-  const sortedAgents = agents.slice().sort((a, b) => {
-    const aPinned = PINNED_AGENT_IDS.includes(a.id);
-    const bPinned = PINNED_AGENT_IDS.includes(b.id);
+  // Sort agents: pipeline order first, then spawner pinned at bottom
+  const sortedAgents = useMemo(() => {
+    if (!agents || agents.length === 0) return [];
     
-    // If both are pinned or both are not pinned, maintain original order
-    if (aPinned === bPinned) return 0;
+    // Create a map for quick lookup
+    const agentMap = new Map(agents.map(a => [a.id, a]));
     
-    // Pinned agents go to the end
-    return aPinned ? 1 : -1;
-  });
+    // Build ordered list: pipeline agents in order, then spawner at end
+    const ordered = [];
+    
+    // Add pipeline agents in defined order
+    for (const agentId of AGENT_ORDER) {
+      const agent = agentMap.get(agentId);
+      if (agent) {
+        ordered.push(agent);
+      }
+    }
+    
+    // Add spawner at the end (pinned)
+    const spawner = agentMap.get(PINNED_AGENT_ID);
+    if (spawner) {
+      ordered.push({ ...spawner, pinned: true });
+    }
+    
+    return ordered;
+  }, [agents]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -72,7 +88,7 @@ export function AgentStatus() {
           </div>
         )}
         {sortedAgents.map((agent) => {
-          const isPinned = PINNED_AGENT_IDS.includes(agent.id);
+          const isPinned = agent.pinned === true;
           return (
             <div 
               key={agent.id}

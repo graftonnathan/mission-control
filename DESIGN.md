@@ -34,6 +34,7 @@ Real-time monitoring dashboard for OpenClaw agent workspace. Central command cen
 - **Current task:** Shows what each agent is working on
 - **Execution order:** Visual pipeline
 - **Pin indicator:** Pinned agents show a subtle star icon
+- **Sorting logic:** Fixed pipeline order with spawner always at bottom (implemented 2026-02-17)
 
 ### 4. Backend Status Indicators
 - **Running light:** Green dot (running) | Red dot (stopped)
