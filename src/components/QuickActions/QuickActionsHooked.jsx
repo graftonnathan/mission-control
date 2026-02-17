@@ -361,15 +361,18 @@ export function QuickActionsHooked({ selectedProject, onProjectDeleted }) {
 
   const handlePushGit = async () => {
     if (!selectedProject) return;
+    console.log(`[Git] Pushing project: ${selectedProject.name}...`);
     try {
-      await pushProjectToGit(selectedProject.name);
+      const result = await pushProjectToGit(selectedProject.name);
+      console.log(`[Git] Push successful for ${selectedProject.name}:`, result?.message || 'OK');
     } catch (err) {
-      console.error('Failed to push:', err);
+      console.error(`[Git] Push failed for ${selectedProject.name}:`, err.message || err);
     }
   };
 
   const handlePullGit = async () => {
     if (!selectedProject || isPulling) return;
+    console.log(`[Git] Pulling project: ${selectedProject.name}...`);
 
     setIsPulling(true);
     setPullError(null);
@@ -378,13 +381,16 @@ export function QuickActionsHooked({ selectedProject, onProjectDeleted }) {
     try {
       const result = await pullProjectFromGit(selectedProject.name);
       if (result && result.success) {
+        console.log(`[Git] Pull successful for ${selectedProject.name}:`, result?.message || result?.output || 'OK');
         setPullSuccess(true);
         setTimeout(() => setPullSuccess(false), 3000);
       } else {
+        console.error(`[Git] Pull failed for ${selectedProject.name}:`, result?.error || 'Unknown error');
         setPullError(result?.error || 'Pull failed');
         setTimeout(() => setPullError(null), 5000);
       }
     } catch (err) {
+      console.error(`[Git] Pull error for ${selectedProject?.name}:`, err.message || err);
       setPullError(err.message || 'Pull failed');
       setTimeout(() => setPullError(null), 5000);
     } finally {
