@@ -69,9 +69,11 @@ Registry-based system that binds Quick Action buttons to projects and provides a
 - **CSS Containment:** `contain: layout style` prevents layout shift, fixed 36px height + 120px min-width
 
 **Visual States:**
-- **Default:** Standard theme colors
-- **Recovering:** Yellow pulse animation + spinner
-- **Failed:** Red border + warning icon + disabled
+- **Default:** Slate panel background (#1e293b), subtle border (#334155), white text
+- **Hover:** Slightly lighter background (#27354f), brighter border (#475569)
+- **Focus:** Pink ring (#ec4899) with offset for visibility
+- **Recovering:** Cyan pulse animation (#06b6d4) with inner glow + spinner (UPDATED 2026-02-17)
+- **Failed:** Subtle red glow pulse (#ef4444) with white text, not harsh red (UPDATED 2026-02-17)
 
 **Event System:**
 ```javascript
@@ -116,6 +118,7 @@ window.dispatchEvent(new CustomEvent('action:status', { detail: { actionId, stat
 --mission-bg: #0f172a        /* Deep slate */
 --mission-panel: #1e293b     /* Panel background */
 --mission-border: #334155    /* Borders/dividers */
+--slate-750: #27354f         /* Custom hover state (UPDATED 2026-02-17) */
 
 /* Status Colors */
 --status-active: #22c55e     /* Green - running */
@@ -125,8 +128,8 @@ window.dispatchEvent(new CustomEvent('action:status', { detail: { actionId, stat
 
 /* Phase Colors */
 --phase-plan: #8b5cf6        /* Purple */
---phase-architecture: #06b6d4 /* Cyan */
---phase-design: #ec4899      /* Pink */
+--phase-architecture: #06b6d4 /* Cyan - used for recovery animations */
+--phase-design: #ec4899      /* Pink - used for focus rings (UPDATED 2026-02-17) */
 --phase-implement: #3b82f6   /* Blue */
 --phase-build: #f59e0b       /* Amber */
 --phase-test: #10b981        /* Green */
