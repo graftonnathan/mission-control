@@ -284,6 +284,9 @@ export function QuickActionsHooked({ selectedProject, onProjectDeleted }) {
   const [isPulling, setIsPulling] = useState(false);
   const [pullError, setPullError] = useState(null);
   const [pullSuccess, setPullSuccess] = useState(false);
+  const [isPushing, setIsPushing] = useState(false);
+  const [pushError, setPushError] = useState(null);
+  const [pushSuccess, setPushSuccess] = useState(false);
 
   // Update project context when selected project changes
   useEffect(() => {
@@ -360,13 +363,30 @@ export function QuickActionsHooked({ selectedProject, onProjectDeleted }) {
   };
 
   const handlePushGit = async () => {
-    if (!selectedProject) return;
+    if (!selectedProject || isPushing) return;
     console.log(`[Git] Pushing project: ${selectedProject.name}...`);
+    
+    setIsPushing(true);
+    setPushError(null);
+    setPushSuccess(false);
+    
     try {
       const result = await pushProjectToGit(selectedProject.name);
-      console.log(`[Git] Push successful for ${selectedProject.name}:`, result?.message || 'OK');
+      if (result && result.success) {
+        console.log(`[Git] Push successful for ${selectedProject.name}:`, result?.message || 'OK');
+        setPushSuccess(true);
+        setTimeout(() => setPushSuccess(false), 3000);
+      } else {
+        console.error(`[Git] Push failed for ${selectedProject.name}:`, result?.error || 'Unknown error');
+        setPushError(result?.error || 'Push failed');
+        setTimeout(() => setPushError(null), 5000);
+      }
     } catch (err) {
       console.error(`[Git] Push failed for ${selectedProject.name}:`, err.message || err);
+      setPushError(err.message || 'Push failed');
+      setTimeout(() => setPushError(null), 5000);
+    } finally {
+      setIsPushing(false);
     }
   };
 
@@ -511,10 +531,11 @@ export function QuickActionsHooked({ selectedProject, onProjectDeleted }) {
             />
             <StableActionButton
               actionId="push-git"
-              label="Push"
-              icon={<PushIcon className="w-3.5 h-3.5" />}
+              label={isPushing ? 'Pushing...' : 'Push'}
+              icon={isPushing ? <HourglassIcon className="w-3.5 h-3.5 animate-pulse" /> : <PushIcon className="w-3.5 h-3.5" />}
               onClick={handlePushGit}
               variant="secondary"
+              disabled={isPushing}
             />
             <StableActionButton
               actionId="add-task"
@@ -533,6 +554,17 @@ export function QuickActionsHooked({ selectedProject, onProjectDeleted }) {
                 : 'text-status-active bg-status-active/20 border-status-active/30'
             }`}>
               {pullError ? `⚠️ ${pullError}` : '✓ Pulled successfully'}
+            </div>
+          )}
+
+          {/* Push Messages */}
+          {(pushError || pushSuccess) && (
+            <div className={`mt-2 text-[10px] px-2 py-1.5 rounded border ${
+              pushError
+                ? 'text-status-error bg-status-error/20 border-status-error/30'
+                : 'text-status-active bg-status-active/20 border-status-active/30'
+            }`}>
+              {pushError ? `⚠️ ${pushError}` : '✓ Pushed successfully'}
             </div>
           )}
 

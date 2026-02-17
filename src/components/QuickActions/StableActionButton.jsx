@@ -74,6 +74,7 @@ const StableActionButton = forwardRef(({
     if (!button) return;
 
     const handleClick = async (e) => {
+      console.log(`[Button] Clicked: ${actionId}`);
       e.preventDefault();
       e.stopPropagation();
 
@@ -84,12 +85,16 @@ const StableActionButton = forwardRef(({
 
       try {
         if (handlerRef.current) {
+          console.log(`[Button] Executing handler for: ${actionId}`);
           await executeAction(actionId, handlerRef.current);
+        } else {
+          console.warn(`[Button] No handler for: ${actionId}`);
         }
         window.dispatchEvent(new CustomEvent('action:status', {
           detail: { actionId, status: 'completed', timestamp: Date.now() }
         }));
       } catch (error) {
+        console.error(`[Button] Action failed: ${actionId}`, error);
         window.dispatchEvent(new CustomEvent('action:status', {
           detail: { actionId, status: 'failed', error, timestamp: Date.now() }
         }));
@@ -97,7 +102,11 @@ const StableActionButton = forwardRef(({
     };
 
     button.addEventListener('click', handleClick);
-    return () => button.removeEventListener('click', handleClick);
+    console.log(`[Button] Attached listener: ${actionId}`);
+    return () => {
+      button.removeEventListener('click', handleClick);
+      console.log(`[Button] Removed listener: ${actionId}`);
+    };
   }, [actionId, executeAction]);
 
   // Merge refs
