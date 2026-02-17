@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ProjectMonitor } from './ProjectMonitor';
 import { TokenMonitor } from './TokenMonitor';
 import { QuickActions } from './QuickActions';
+import { QuickActionsHooked } from './QuickActions/QuickActionsHooked';
+import { QuickActionsProjectProvider, dispatchProjectCreated } from './QuickActions';
 import { Tickets } from './Tickets';
 import { SystemHealth } from './SystemHealth';
 import { LiveLog } from './LiveLog';
@@ -27,7 +29,7 @@ function useIsMobile() {
   return isMobile;
 }
 
-export function Dashboard() {
+function DashboardContent() {
   const currentTime = useLiveClock();
   const [selectedProject, setSelectedProject] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -101,7 +103,7 @@ export function Dashboard() {
 
         {/* Row 3: Quick Actions - STRICT 400px height */}
         <div className="flex-shrink-0" style={{ height: '400px', flex: 'none' }}>
-          <QuickActions 
+          <QuickActionsHooked 
             selectedProject={selectedProject} 
             onProjectDeleted={handleProjectDeleted}
           />
@@ -126,6 +128,15 @@ export function Dashboard() {
         OpenClaw Mission Control Dashboard v1.0 • Real-time Workspace Monitor
       </footer>
     </div>
+  );
+}
+
+// Main Dashboard Component with Provider
+export function Dashboard() {
+  return (
+    <QuickActionsProjectProvider>
+      <DashboardContent />
+    </QuickActionsProjectProvider>
   );
 }
 
@@ -170,7 +181,7 @@ function MobileDashboard({ currentTime, selectedProject, onProjectDeleted, refre
 
       {/* Row 4: Quick Actions - Shows details for selected project */}
       <div className="flex-shrink-0" style={{ height: '350px' }}>
-        <QuickActions 
+        <QuickActionsHooked 
           selectedProject={localSelectedProject}
           onProjectDeleted={() => {
             setLocalSelectedProject(null);
@@ -557,8 +568,32 @@ function useAgentsHook() {
 }
 
 // Desktop Agent Status (narrow column)
+// Pipeline order for agents - spawner is always pinned at the bottom
+const AGENT_ORDER_NARROW = ['planner', 'architect', 'designer', 'ed', 'builder', 'dummy'];
+const PINNED_AGENT_ID_NARROW = 'spawner';
+
 function AgentStatusNarrow() {
   const { agents, loading, error } = useAgentsHook();
+
+  // Sort agents: pipeline order first, then spawner pinned at bottom
+  const sortedAgents = useMemo(() => {
+    if (!agents || agents.length === 0) return [];
+    
+    const agentMap = new Map(agents.map(a => [a.id, a]));
+    const ordered = [];
+    
+    // Add pipeline agents in defined order
+    for (const agentId of AGENT_ORDER_NARROW) {
+      const agent = agentMap.get(agentId);
+      if (agent) ordered.push(agent);
+    }
+    
+    // Add spawner at the end (pinned)
+    const spawner = agentMap.get(PINNED_AGENT_ID_NARROW);
+    if (spawner) ordered.push({ ...spawner, pinned: true });
+    
+    return ordered;
+  }, [agents]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -585,27 +620,41 @@ function AgentStatusNarrow() {
       <div className="flex flex-col h-full min-h-0">
         {/* Agent List - scrollable, takes remaining space */}
         <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
-          {agents.map((agent) => (
-            <div 
-              key={agent.id}
-              className="flex items-center gap-2 px-2 py-1.5 rounded border border-mission-border/20 hover:border-mission-border/40 transition-colors"
-            >
-              <div className="relative flex-shrink-0">
-                <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)}`} />
-                {agent.status === 'working' && (
-                  <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)} animate-ping opacity-75`} />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-mission-text truncate">
-                  {formatAgentName(agent.name)}
+          {sortedAgents.map((agent) => {
+            const isPinned = agent.pinned === true;
+            return (
+              <div 
+                key={agent.id}
+                className={`flex items-center gap-2 px-2 py-1.5 rounded border border-mission-border/20 hover:border-mission-border/40 transition-colors ${isPinned ? 'bg-mission-bg/20' : ''}`}
+              >
+                <div className="relative flex-shrink-0">
+                  <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)}`} />
+                  {agent.status === 'working' && (
+                    <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)} animate-ping opacity-75`} />
+                  )}
                 </div>
-                <div className="text-[10px] text-mission-muted truncate">
-                  {formatActivity(agent)}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-mission-text truncate flex items-center gap-1">
+                    {formatAgentName(agent.name)}
+                    {isPinned && (
+                      <svg 
+                        className="w-3 h-3 text-mission-muted opacity-60" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2"
+                      >
+                        <path d="M12 2l-2 7h-5l4 3-2 7 5-4 5 4-2-7 4-3h-5l-2-7z" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-mission-muted truncate">
+                    {formatActivity(agent)}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </Panel>

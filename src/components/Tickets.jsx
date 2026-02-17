@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Panel } from './StatusBadge';
+import { POLL_INTERVALS } from '../utils/constants';
 
 export function Tickets() {
   const [tickets, setTickets] = useState([]);
@@ -32,7 +33,7 @@ export function Tickets() {
 
   useEffect(() => {
     loadTickets();
-    const interval = setInterval(loadTickets, 30000);
+    const interval = setInterval(loadTickets, POLL_INTERVALS.AGENTS);
     return () => clearInterval(interval);
   }, []);
 

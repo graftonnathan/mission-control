@@ -46,6 +46,33 @@ Real-time monitoring dashboard for OpenClaw agent workspace. Central command cen
 - **New project:** Architect integration
 - **Emergency stop:** Kill all agents
 
+#### 5a. Quick Actions Hook System (NEW - 2026-02-17)
+Registry-based system that binds Quick Action buttons to projects and provides automatic recovery when actions fail.
+
+**Components:**
+- `useActionRegistry` hook - Central store for registered actions with project binding
+- `QuickActionsProjectProvider` - Context provider for project lifecycle events
+- `useActionRecovery` hook - Automatic failure detection with exponential backoff
+- `StableActionButton` - Button component with stable event handling and CSS containment
+
+**Key Features:**
+- **Automatic Registration:** Actions self-register on mount with cleanup on unmount
+- **Project Context Binding:** Each action bound to active project, re-initialized on project switch
+- **Failure Recovery:** Detects `action:failed` events, auto-re-registers with visual feedback
+- **Stable Event Handling:** Uses refs to prevent stale closures, single event attachment per lifecycle
+- **CSS Containment:** `contain: layout style` prevents layout shift, fixed 36px height + 120px min-width
+
+**Visual States:**
+- **Default:** Standard theme colors
+- **Recovering:** Yellow pulse animation + spinner
+- **Failed:** Red border + warning icon + disabled
+
+**Event System:**
+```javascript
+window.dispatchEvent(new CustomEvent('project:created', { detail: { projectId, projectName } }));
+window.dispatchEvent(new CustomEvent('action:status', { detail: { actionId, status: 'failed' } }));
+```
+
 ---
 
 ## UI/UX DESIGN
