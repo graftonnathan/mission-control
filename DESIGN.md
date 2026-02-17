@@ -36,13 +36,19 @@ Real-time monitoring dashboard for OpenClaw agent workspace. Central command cen
 - **Pin indicator:** Pinned agents show a subtle star icon
 - **Sorting logic:** Fixed pipeline order with spawner always at bottom (implemented 2026-02-17)
 
-### 4. Backend Status Indicators
+### 4. Token Monitor Panel (REMOVED - 2026-02-17)
+- **Status:** Removed from dashboard per design update
+- **Component:** TokenMonitor.jsx still exists in codebase but no longer rendered
+- **Note:** Token usage data may be accessed elsewhere if needed
+
+### 5. Backend Status Indicators
 - **Running light:** Green dot (running) | Red dot (stopped)
 - **Position:** Right side of each project row
 - **Consistent spacing:** Fixed width container
 
-### 5. Quick Actions
+### 6. Quick Actions
 - **Create ticket:** Modal form (UPDATED 2026-02-17 - Increased width by 100px to 612px, height by 500px to min-h-[600px], centered on screen)
+- **Panel height:** 600px desktop (increased from 400px), 550px mobile (increased from 350px) - UPDATED 2026-02-17
 - **New project:** Architect integration
 - **Emergency stop:** Kill all agents
 
@@ -89,9 +95,20 @@ window.dispatchEvent(new CustomEvent('action:status', { detail: { actionId, stat
 │          │   view)      │       view)               │
 │          │              │                           │
 ├──────────┴──────────────┴───────────────────────────┤
-│  FOOTER: Token usage | System health | Last update  │
+│  QUICK ACTIONS (600px height)                       │
+├───────────────────────┬─────────────────────────────┤
+│    SYSTEM HEALTH      │         LIVE LOG            │
+│                       │                             │
+│   (2-column layout)   │                             │
+├───────────────────────┴─────────────────────────────┤
+│  FOOTER: System health | Last update                │
 └─────────────────────────────────────────────────────┘
 ```
+
+**UPDATED 2026-02-17:**
+- Bottom row changed from 3 columns to 2 columns (TokenMonitor removed)
+- Quick Actions height: 600px desktop / 550px mobile (+200px)
+- Row 4 now shows only SystemHealth and LiveLog side by side
 
 ### Color Palette (DARK THEME)
 ```css
@@ -185,14 +202,14 @@ Grid: 12 columns
 - `AgentStatus.jsx` - Agent pipeline view
 - `StatusBadge.jsx` - Phase/status badges
 - `SystemHealth.jsx` - Footer metrics
-- `TokenMonitor.jsx` - Token usage display
+- `TokenMonitor.jsx` - Token usage display (REMOVED from dashboard 2026-02-17 - component retained but not rendered)
 - `QuickActions.jsx` - Buttons/modals
 
 ### Hooks
 - `useProjects()` - Fetch project data
 - `useTickets()` - Fetch ticket data
 - `useAgents()` - Fetch agent status
-- `useTokens()` - Fetch token usage
+- `useTokens()` - Fetch token usage (available but not currently displayed)
 
 ### API Endpoints (Vite middleware)
 - `GET /api/projects` - List all projects
