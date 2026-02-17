@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ProjectMonitor } from './ProjectMonitor';
-import { TokenMonitor } from './TokenMonitor';
 import { QuickActionsHooked } from './QuickActions/QuickActionsHooked';
 import { QuickActionsProjectProvider, dispatchProjectCreated } from './QuickActions';
 import { Tickets } from './Tickets';
@@ -100,19 +99,16 @@ function DashboardContent() {
           />
         </div>
 
-        {/* Row 3: Quick Actions - STRICT 400px height */}
-        <div className="flex-shrink-0" style={{ height: '400px', flex: 'none' }}>
+        {/* Row 3: Quick Actions - STRICT 600px height */}
+        <div className="flex-shrink-0" style={{ height: '600px', flex: 'none' }}>
           <QuickActionsHooked 
             selectedProject={selectedProject} 
             onProjectDeleted={handleProjectDeleted}
           />
         </div>
 
-        {/* Row 4: Bottom 3 panels - fill remaining space, max 1000px */}
-        <div className="grid grid-cols-3 gap-4 flex-1 min-h-0" style={{ maxHeight: '1000px' }}>
-          <div className="h-full overflow-hidden">
-            <TokenMonitor selectedProject={selectedProject} />
-          </div>
+        {/* Row 4: Bottom 2 panels - fill remaining space, max 1000px */}
+        <div className="grid grid-cols-2 gap-4 flex-1 min-h-0" style={{ maxHeight: '1000px' }}>
           <div className="h-full overflow-hidden">
             <SystemHealth />
           </div>
@@ -179,7 +175,7 @@ function MobileDashboard({ currentTime, selectedProject, onProjectDeleted, refre
       </div>
 
       {/* Row 4: Quick Actions - Shows details for selected project */}
-      <div className="flex-shrink-0" style={{ height: '350px' }}>
+      <div className="flex-shrink-0" style={{ height: '550px' }}>
         <QuickActionsHooked 
           selectedProject={localSelectedProject}
           onProjectDeleted={() => {
@@ -189,11 +185,8 @@ function MobileDashboard({ currentTime, selectedProject, onProjectDeleted, refre
         />
       </div>
 
-      {/* Row 5: Tokens, Recent, Log - Stacked */}
+      {/* Row 5: SystemHealth and LiveLog - Stacked */}
       <div className="flex flex-col gap-2">
-        <div style={{ height: '200px' }}>
-          <TokenMonitor selectedProject={localSelectedProject} />
-        </div>
         <div style={{ height: '400px' }}>
           <SystemHealth />
         </div>
