@@ -42,7 +42,7 @@ Real-time monitoring dashboard for OpenClaw agent workspace. Central command cen
 - **Consistent spacing:** Fixed width container
 
 ### 5. Quick Actions
-- **Create ticket:** Modal form
+- **Create ticket:** Modal form (UPDATED 2026-02-17 - Increased width by 100px to 612px, height by 500px to min-h-[600px], centered on screen)
 - **New project:** Architect integration
 - **Emergency stop:** Kill all agents
 
