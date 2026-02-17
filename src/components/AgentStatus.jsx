@@ -2,8 +2,23 @@ import { useState, useEffect } from 'react';
 import { useAgents } from '../hooks/useAgents';
 import { Panel } from './StatusBadge';
 
+// Pin configuration - agents listed here will appear at the bottom
+const PINNED_AGENT_IDS = ['spawner'];
+
 export function AgentStatus() {
   const { agents, loading, error } = useAgents();
+
+  // Sort agents: regular agents first (in defined order), then pinned agents at end
+  const sortedAgents = agents.slice().sort((a, b) => {
+    const aPinned = PINNED_AGENT_IDS.includes(a.id);
+    const bPinned = PINNED_AGENT_IDS.includes(b.id);
+    
+    // If both are pinned or both are not pinned, maintain original order
+    if (aPinned === bPinned) return 0;
+    
+    // Pinned agents go to the end
+    return aPinned ? 1 : -1;
+  });
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -51,35 +66,50 @@ export function AgentStatus() {
   return (
     <Panel title="Agents" loading={loading} error={error} className="h-full" flexContent>
       <div className="flex-1 overflow-y-auto min-h-0 space-y-2">
-        {agents.length === 0 && !loading && (
+        {sortedAgents.length === 0 && !loading && (
           <div className="text-mission-muted text-sm text-center py-2">
             No agents
           </div>
         )}
-        {agents.map((agent) => (
-          <div 
-            key={agent.id}
-            className="flex items-center gap-3 px-2 py-1.5 rounded hover:bg-mission-bg/30"
-          >
-            {/* Status Light - larger and fixed */}
-            <div className="relative flex-shrink-0">
-              <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)}`} />
-              {agent.status === 'working' && (
-                <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)} animate-ping opacity-75`} />
-              )}
+        {sortedAgents.map((agent) => {
+          const isPinned = PINNED_AGENT_IDS.includes(agent.id);
+          return (
+            <div 
+              key={agent.id}
+              className={`flex items-center gap-3 px-2 py-1.5 rounded hover:bg-mission-bg/30 ${isPinned ? 'bg-mission-bg/20' : ''}`}
+            >
+              {/* Status Light - larger and fixed */}
+              <div className="relative flex-shrink-0">
+                <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)}`} />
+                {agent.status === 'working' && (
+                  <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)} animate-ping opacity-75`} />
+                )}
+              </div>
+              
+              {/* Agent Name - fixed width, no truncation issues */}
+              <div className="text-sm font-medium text-mission-text leading-tight w-20 flex-shrink-0 flex items-center gap-1">
+                {formatAgentName(agent.name)}
+                {isPinned && (
+                  <svg 
+                    className="w-3 h-3 text-mission-muted opacity-60" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2"
+                    aria-label="Pinned agent"
+                  >
+                    <path d="M12 2l-2 7h-5l4 3-2 7 5-4 5 4-2-7 4-3h-5l-2-7z" />
+                  </svg>
+                )}
+              </div>
+              
+              {/* Activity Text - shows what agent is doing */}
+              <div className="text-xs text-mission-muted truncate flex-1 text-right">
+                {formatActivity(agent)}
+              </div>
             </div>
-            
-            {/* Agent Name - fixed width, no truncation issues */}
-            <div className="text-sm font-medium text-mission-text leading-tight w-20 flex-shrink-0">
-              {formatAgentName(agent.name)}
-            </div>
-            
-            {/* Activity Text - shows what agent is doing */}
-            <div className="text-xs text-mission-muted truncate flex-1 text-right">
-              {formatActivity(agent)}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Panel>
   );
