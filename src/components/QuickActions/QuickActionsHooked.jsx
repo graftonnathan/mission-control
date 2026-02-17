@@ -375,18 +375,18 @@ export function QuickActionsHooked({ selectedProject, onProjectDeleted }) {
       if (result && result.success) {
         console.log(`[Git] Push successful for ${selectedProject.name}:`, result?.message || 'OK');
         setPushSuccess(true);
-        logActivity({ type: 'git', action: 'push', project: selectedProject.name, status: 'success', message: 'Pushed to git' });
+        logActivity({ type: 'git', action: 'push', project: selectedProject.name, status: 'success', message: 'Pushed to git', timestamp: new Date().toISOString() });
         setTimeout(() => setPushSuccess(false), 3000);
       } else {
         console.error(`[Git] Push failed for ${selectedProject.name}:`, result?.error || 'Unknown error');
         setPushError(result?.error || 'Push failed');
-        logActivity({ type: 'git', action: 'push', project: selectedProject.name, status: 'error', message: result?.error || 'Push failed' });
+        logActivity({ type: 'git', action: 'push', project: selectedProject.name, status: 'error', message: result?.error || 'Push failed', timestamp: new Date().toISOString() });
         setTimeout(() => setPushError(null), 5000);
       }
     } catch (err) {
       console.error(`[Git] Push failed for ${selectedProject.name}:`, err.message || err);
       setPushError(err.message || 'Push failed');
-      logActivity({ type: 'git', action: 'push', project: selectedProject.name, status: 'error', message: err.message || 'Push failed' });
+      logActivity({ type: 'git', action: 'push', project: selectedProject.name, status: 'error', message: err.message || 'Push failed', timestamp: new Date().toISOString() });
       setTimeout(() => setPushError(null), 5000);
     } finally {
       setIsPushing(false);
@@ -406,18 +406,18 @@ export function QuickActionsHooked({ selectedProject, onProjectDeleted }) {
       if (result && result.success) {
         console.log(`[Git] Pull successful for ${selectedProject.name}:`, result?.message || result?.output || 'OK');
         setPullSuccess(true);
-        logActivity({ type: 'git', action: 'pull', project: selectedProject.name, status: 'success', message: 'Pulled from git' });
+        logActivity({ type: 'git', action: 'pull', project: selectedProject.name, status: 'success', message: 'Pulled from git', timestamp: new Date().toISOString() });
         setTimeout(() => setPullSuccess(false), 3000);
       } else {
         console.error(`[Git] Pull failed for ${selectedProject.name}:`, result?.error || 'Unknown error');
         setPullError(result?.error || 'Pull failed');
-        logActivity({ type: 'git', action: 'pull', project: selectedProject.name, status: 'error', message: result?.error || 'Pull failed' });
+        logActivity({ type: 'git', action: 'pull', project: selectedProject.name, status: 'error', message: result?.error || 'Pull failed', timestamp: new Date().toISOString() });
         setTimeout(() => setPullError(null), 5000);
       }
     } catch (err) {
       console.error(`[Git] Pull error for ${selectedProject?.name}:`, err.message || err);
       setPullError(err.message || 'Pull failed');
-      logActivity({ type: 'git', action: 'pull', project: selectedProject.name, status: 'error', message: err.message || 'Pull failed' });
+      logActivity({ type: 'git', action: 'pull', project: selectedProject.name, status: 'error', message: err.message || 'Pull failed', timestamp: new Date().toISOString() });
       setTimeout(() => setPullError(null), 5000);
     } finally {
       setIsPulling(false);
