@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import useActionRegistry from './useActionRegistry';
-import useActionRecovery from './useActionRecovery';
+import useActionRegistry from './hooks/useActionRegistry';
+import useActionRecovery from './hooks/useActionRecovery';
 
 /**
  * Quick Actions Project Context

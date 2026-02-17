@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ProjectMonitor } from './ProjectMonitor';
 import { TokenMonitor } from './TokenMonitor';
-import { QuickActions } from './QuickActions';
 import { QuickActionsHooked } from './QuickActions/QuickActionsHooked';
 import { QuickActionsProjectProvider, dispatchProjectCreated } from './QuickActions';
 import { Tickets } from './Tickets';
