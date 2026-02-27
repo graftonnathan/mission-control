@@ -28,7 +28,7 @@ Real-time monitoring dashboard for OpenClaw agent workspace. Central command cen
 - **Sections:** Active tickets | Archived tickets
 - **Ticket cards:** Icon | Title | Phase | Assignee | Working indicator
 
-### 3. Agent Status Panel
+### 3. Agent Status Panel (ENHANCED - 2026-02-27)
 - **Agent list:** planner, architect, designer, ed, builder, dummy, spawner (pinned at bottom)
 - **Status indicators:** Idle | Working (with task)
 - **Current task:** Shows what each agent is working on

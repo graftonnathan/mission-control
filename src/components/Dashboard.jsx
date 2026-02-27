@@ -7,6 +7,7 @@ import { SystemHealth } from './SystemHealth';
 import { LiveLog } from './LiveLog';
 import { formatTime } from '../utils/formatters';
 import { useLiveClock } from '../hooks/useLiveClock';
+import { AgentStatusEnhanced } from './AgentStatusEnhanced/AgentStatusEnhanced';
 import { Panel } from './StatusBadge';
 import { getExchangeTasks, scanProjects } from '../utils/fileApi';
 
@@ -83,7 +84,7 @@ function DashboardContent() {
         {/* Row 1: Agents + Tickets - 500px height */}
         <div className="grid grid-cols-12 gap-4 flex-shrink-0" style={{ height: '500px' }}>
           <div className="col-span-2 h-full overflow-hidden">
-            <AgentStatusNarrow />
+            <AgentStatusEnhanced />
           </div>
           <div className="col-span-10 h-full overflow-hidden">
             <Tickets />
@@ -157,7 +158,7 @@ function MobileDashboard({ currentTime, selectedProject, onProjectDeleted, refre
 
       {/* Row 1: Agents - Auto height to show all */}
       <div className="flex-shrink-0">
-        <AgentStatusHorizontal />
+        <AgentStatusEnhanced />
       </div>
 
       {/* Row 2: Tickets - Large window */}
@@ -204,42 +205,6 @@ function MobileDashboard({ currentTime, selectedProject, onProjectDeleted, refre
 }
 
 // Horizontal Agent Status for Mobile - wraps to show all
-function AgentStatusHorizontal() {
-  const { agents, loading, error } = useAgentsHook();
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'working': return 'bg-status-working';
-      case 'error': return 'bg-status-error';
-      case 'idle': default: return 'bg-status-idle';
-    }
-  };
-
-  const formatAgentName = (name) => {
-    if (!name || typeof name !== 'string') return '?';
-    const match = name.match(/([^/\s]+)\.md/);
-    if (match) return match[1];
-    return name.replace(/^AGENTS\//, '').replace(/\.md$/, '').trim().substring(0, 8);
-  };
-
-  return (
-    <Panel title="Agents" loading={loading} error={error} className="h-full" flexContent>
-      <div className="flex flex-wrap gap-2 p-1">
-        {agents.map((agent) => (
-          <div 
-            key={agent.id}
-            className="flex items-center gap-1.5 px-2 py-1 rounded border border-mission-border/20 bg-mission-bg/30"
-          >
-            <div className={`w-2 h-2 rounded-full ${getStatusColor(agent.status)}`} />
-            <span className="text-xs text-mission-text">{formatAgentName(agent.name)}</span>
-          </div>
-        ))}
-      </div>
-    </Panel>
-  );
-}
-
-// Horizontal Scrolling Project Cards for Mobile
 function ProjectMonitorCards({ selectedProject, onSelectProject }) {
   const { projects, loading, error } = useProjectsHook();
   const [projectStatus, setProjectStatus] = useState({});
@@ -531,92 +496,6 @@ function useProjectsHook() {
 }
 
 // Hook for agents (reused)
-function useAgentsHook() {
-  const [agents, setAgents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        const response = await fetch('/api/agents');
-        if (!response.ok) throw new Error('Failed to fetch agents');
-        const data = await response.json();
-        setAgents(data);
-        setError(null);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAgents();
-    const interval = setInterval(fetchAgents, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return { agents, loading, error };
-}
-
-// Desktop Agent Status (narrow column)
-// Pipeline order for agents - spawner is always pinned at the bottom
-const AGENT_ORDER_NARROW = ['planner', 'architect', 'designer', 'ed', 'builder', 'dummy'];
-const PINNED_AGENT_ID_NARROW = 'spawner';
-
-function AgentStatusNarrow() {
-  const { agents, loading, error } = useAgentsHook();
-
-  // Sort agents: pipeline order first, then spawner pinned at bottom
-  const sortedAgents = useMemo(() => {
-    if (!agents || agents.length === 0) return [];
-    
-    const agentMap = new Map(agents.map(a => [a.id, a]));
-    const ordered = [];
-    
-    // Add pipeline agents in defined order
-    for (const agentId of AGENT_ORDER_NARROW) {
-      const agent = agentMap.get(agentId);
-      if (agent) ordered.push(agent);
-    }
-    
-    // Add spawner at the end (pinned)
-    const spawner = agentMap.get(PINNED_AGENT_ID_NARROW);
-    if (spawner) ordered.push({ ...spawner, pinned: true });
-    
-    return ordered;
-  }, [agents]);
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'working': return 'bg-status-working';
-      case 'error': return 'bg-status-error';
-      case 'idle': default: return 'bg-status-idle';
-    }
-  };
-
-  const formatAgentName = (name) => {
-    if (!name || typeof name !== 'string') return 'Unknown';
-    const match = name.match(/([^/\s]+)\.md/);
-    if (match) return match[1];
-    return name.replace(/^AGENTS\//, '').replace(/\.md$/, '').trim();
-  };
-
-  const formatActivity = (agent) => {
-    if (!agent.currentTask) return 'idle';
-    return agent.project || 'active';
-  };
-
-  return (
-    <Panel title="Agents" loading={loading} error={error} className="h-full" flexContent>
-      <div className="flex flex-col h-full min-h-0">
-        {/* Agent List - scrollable, takes remaining space */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
-          {sortedAgents.map((agent) => {
-            const isPinned = agent.pinned === true;
-            return (
-              <div 
-                key={agent.id}
                 className={`flex items-center gap-2 px-2 py-1.5 rounded border border-mission-border/20 hover:border-mission-border/40 transition-colors ${isPinned ? 'bg-mission-bg/20' : ''}`}
               >
                 <div className="relative flex-shrink-0">
