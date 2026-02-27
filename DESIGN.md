@@ -66,7 +66,7 @@ Registry-based system that binds Quick Action buttons to projects and provides a
 - **Project Context Binding:** Each action bound to active project, re-initialized on project switch
 - **Failure Recovery:** Detects `action:failed` events, auto-re-registers with visual feedback
 - **Stable Event Handling:** Uses refs to prevent stale closures, single event attachment per lifecycle
-- **CSS Containment:** `contain: layout style` prevents layout shift, fixed 36px height + 120px min-width
+- **CSS Containment:** `contain: layout style` prevents layout shift, fixed 54px height + 140px min-width (desktop), 48px height + 120px min-width (mobile)
 
 **Visual States:**
 - **Default:** Slate panel background (#1e293b), subtle border (#334155), white text
