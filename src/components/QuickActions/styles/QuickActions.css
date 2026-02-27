@@ -18,18 +18,18 @@
 /* Base Button Styles */
 .quick-action-btn {
   /* Fixed dimensions prevent misalignment */
-  min-width: 120px;
-  height: 36px;
+  min-width: 140px;
+  height: 54px;
   
   /* Layout */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
   
   /* Spacing */
   margin: 0;
-  padding: 0.25rem 0.5rem;
+  padding: 0.75rem 1.25rem;
   
   /* Prevent flexbox compression */
   flex-shrink: 0;
@@ -37,8 +37,8 @@
   
   /* Visual */
   border: 1px solid var(--mission-border, #334155);
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
   font-weight: 500;
   line-height: 1.25;
   letter-spacing: -0.01em;
@@ -53,10 +53,21 @@
     transform 50ms ease;
 }
 
+/* Mobile override */
+@media (max-width: 639px) {
+  .quick-action-btn {
+    min-width: 120px;
+    height: 48px;
+    padding: 0.625rem 1rem;
+    font-size: 0.9375rem;
+    gap: 0.375rem;
+  }
+}
+
 /* Icon */
 .quick-action-btn__icon {
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
