@@ -3,6 +3,7 @@
 }
 
 .status-indicator-working {
+  position: relative;
   background-color: #3b82f6;
 }
 

@@ -28,58 +28,21 @@ Real-time monitoring dashboard for OpenClaw agent workspace. Central command cen
 - **Sections:** Active tickets | Archived tickets
 - **Ticket cards:** Icon | Title | Phase | Assignee | Working indicator
 
-### 3. Agent Status Panel (ENHANCED - 2026-02-27)
-- **Agent list:** planner, architect, designer, ed, builder, dummy, spawner (pinned at bottom)
+### 3. Agent Status Panel
+- **Agent list:** planner, architect, designer, ed, spawner, builder, dummy
 - **Status indicators:** Idle | Working (with task)
 - **Current task:** Shows what each agent is working on
 - **Execution order:** Visual pipeline
-- **Pin indicator:** Pinned agents show a subtle star icon
-- **Sorting logic:** Fixed pipeline order with spawner always at bottom (implemented 2026-02-17)
 
-### 4. Token Monitor Panel (REMOVED - 2026-02-17)
-- **Status:** Removed from dashboard per design update
-- **Component:** TokenMonitor.jsx still exists in codebase but no longer rendered
-- **Note:** Token usage data may be accessed elsewhere if needed
-
-### 5. Backend Status Indicators
+### 4. Backend Status Indicators
 - **Running light:** Green dot (running) | Red dot (stopped)
 - **Position:** Right side of each project row
 - **Consistent spacing:** Fixed width container
 
-### 6. Quick Actions
-- **Create ticket:** Modal form (UPDATED 2026-02-17 - Increased width by 100px to 612px, height by 500px to min-h-[600px], centered on screen)
-- **Panel height:** 600px desktop (increased from 400px), 550px mobile (increased from 350px) - UPDATED 2026-02-17
+### 5. Quick Actions
+- **Create ticket:** Modal form
 - **New project:** Architect integration
 - **Emergency stop:** Kill all agents
-
-#### 5a. Quick Actions Hook System (NEW - 2026-02-17)
-Registry-based system that binds Quick Action buttons to projects and provides automatic recovery when actions fail.
-
-**Components:**
-- `useActionRegistry` hook - Central store for registered actions with project binding
-- `QuickActionsProjectProvider` - Context provider for project lifecycle events
-- `useActionRecovery` hook - Automatic failure detection with exponential backoff
-- `StableActionButton` - Button component with stable event handling and CSS containment
-
-**Key Features:**
-- **Automatic Registration:** Actions self-register on mount with cleanup on unmount
-- **Project Context Binding:** Each action bound to active project, re-initialized on project switch
-- **Failure Recovery:** Detects `action:failed` events, auto-re-registers with visual feedback
-- **Stable Event Handling:** Uses refs to prevent stale closures, single event attachment per lifecycle
-- **CSS Containment:** `contain: layout style` prevents layout shift, fixed 54px height + 140px min-width (desktop), 48px height + 120px min-width (mobile)
-
-**Visual States:**
-- **Default:** Slate panel background (#1e293b), subtle border (#334155), white text
-- **Hover:** Slightly lighter background (#27354f), brighter border (#475569)
-- **Focus:** Pink ring (#ec4899) with offset for visibility
-- **Recovering:** Cyan pulse animation (#06b6d4) with inner glow + spinner (UPDATED 2026-02-17)
-- **Failed:** Subtle red glow pulse (#ef4444) with white text, not harsh red (UPDATED 2026-02-17)
-
-**Event System:**
-```javascript
-window.dispatchEvent(new CustomEvent('project:created', { detail: { projectId, projectName } }));
-window.dispatchEvent(new CustomEvent('action:status', { detail: { actionId, status: 'failed' } }));
-```
 
 ---
 
@@ -97,20 +60,9 @@ window.dispatchEvent(new CustomEvent('action:status', { detail: { actionId, stat
 │          │   view)      │       view)               │
 │          │              │                           │
 ├──────────┴──────────────┴───────────────────────────┤
-│  QUICK ACTIONS (600px height)                       │
-├───────────────────────┬─────────────────────────────┤
-│    SYSTEM HEALTH      │         LIVE LOG            │
-│                       │                             │
-│   (2-column layout)   │                             │
-├───────────────────────┴─────────────────────────────┤
-│  FOOTER: System health | Last update                │
+│  FOOTER: Token usage | System health | Last update  │
 └─────────────────────────────────────────────────────┘
 ```
-
-**UPDATED 2026-02-17:**
-- Bottom row changed from 3 columns to 2 columns (TokenMonitor removed)
-- Quick Actions height: 600px desktop / 550px mobile (+200px)
-- Row 4 now shows only SystemHealth and LiveLog side by side
 
 ### Color Palette (DARK THEME)
 ```css
@@ -118,7 +70,6 @@ window.dispatchEvent(new CustomEvent('action:status', { detail: { actionId, stat
 --mission-bg: #0f172a        /* Deep slate */
 --mission-panel: #1e293b     /* Panel background */
 --mission-border: #334155    /* Borders/dividers */
---slate-750: #27354f         /* Custom hover state (UPDATED 2026-02-17) */
 
 /* Status Colors */
 --status-active: #22c55e     /* Green - running */
@@ -128,8 +79,8 @@ window.dispatchEvent(new CustomEvent('action:status', { detail: { actionId, stat
 
 /* Phase Colors */
 --phase-plan: #8b5cf6        /* Purple */
---phase-architecture: #06b6d4 /* Cyan - used for recovery animations */
---phase-design: #ec4899      /* Pink - used for focus rings (UPDATED 2026-02-17) */
+--phase-architecture: #06b6d4 /* Cyan */
+--phase-design: #ec4899      /* Pink */
 --phase-implement: #3b82f6   /* Blue */
 --phase-build: #f59e0b       /* Amber */
 --phase-test: #10b981        /* Green */
@@ -190,10 +141,9 @@ Grid: 12 columns
 - **Minimum widths:** List 250px, Detail 300px
 
 ### Agent Status
-- **Order:** planner → architect → designer → ed → builder → dummy → spawner (pinned)
+- **Order:** planner → architect → designer → ed → spawner → builder → dummy
 - **Visual:** Horizontal pipeline with arrows
 - **Status:** Idle (gray) | Working (color + pulse)
-- **Pin Icon:** Star icon (12px) for pinned agents, muted color at 60% opacity
 
 ---
 
@@ -205,14 +155,14 @@ Grid: 12 columns
 - `AgentStatus.jsx` - Agent pipeline view
 - `StatusBadge.jsx` - Phase/status badges
 - `SystemHealth.jsx` - Footer metrics
-- `TokenMonitor.jsx` - Token usage display (REMOVED from dashboard 2026-02-17 - component retained but not rendered)
+- `TokenMonitor.jsx` - Token usage display
 - `QuickActions.jsx` - Buttons/modals
 
 ### Hooks
 - `useProjects()` - Fetch project data
 - `useTickets()` - Fetch ticket data
 - `useAgents()` - Fetch agent status
-- `useTokens()` - Fetch token usage (available but not currently displayed)
+- `useTokens()` - Fetch token usage
 
 ### API Endpoints (Vite middleware)
 - `GET /api/projects` - List all projects

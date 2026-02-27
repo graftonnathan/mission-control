@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ProjectMonitor } from './ProjectMonitor';
-import { QuickActionsHooked } from './QuickActions/QuickActionsHooked';
-import { QuickActionsProjectProvider, dispatchProjectCreated } from './QuickActions';
+import { TokenMonitor } from './TokenMonitor';
+import { QuickActions } from './QuickActions';
 import { Tickets } from './Tickets';
 import { SystemHealth } from './SystemHealth';
 import { LiveLog } from './LiveLog';
 import { formatTime } from '../utils/formatters';
 import { useLiveClock } from '../hooks/useLiveClock';
-import { AgentStatusEnhanced } from './AgentStatusEnhanced/AgentStatusEnhanced';
 import { Panel } from './StatusBadge';
 import { getExchangeTasks, scanProjects } from '../utils/fileApi';
 
@@ -28,7 +27,7 @@ function useIsMobile() {
   return isMobile;
 }
 
-function DashboardContent() {
+export function Dashboard() {
   const currentTime = useLiveClock();
   const [selectedProject, setSelectedProject] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -84,7 +83,7 @@ function DashboardContent() {
         {/* Row 1: Agents + Tickets - 500px height */}
         <div className="grid grid-cols-12 gap-4 flex-shrink-0" style={{ height: '500px' }}>
           <div className="col-span-2 h-full overflow-hidden">
-            <AgentStatusEnhanced />
+            <AgentStatusNarrow />
           </div>
           <div className="col-span-10 h-full overflow-hidden">
             <Tickets />
@@ -100,16 +99,19 @@ function DashboardContent() {
           />
         </div>
 
-        {/* Row 3: Quick Actions - STRICT 600px height */}
-        <div className="flex-shrink-0" style={{ height: '600px', flex: 'none' }}>
-          <QuickActionsHooked 
+        {/* Row 3: Quick Actions - STRICT 400px height */}
+        <div className="flex-shrink-0" style={{ height: '400px', flex: 'none' }}>
+          <QuickActions 
             selectedProject={selectedProject} 
             onProjectDeleted={handleProjectDeleted}
           />
         </div>
 
-        {/* Row 4: Bottom 2 panels - fill remaining space, max 1000px */}
-        <div className="grid grid-cols-2 gap-4 flex-1 min-h-0" style={{ maxHeight: '1000px' }}>
+        {/* Row 4: Bottom 3 panels - fill remaining space, max 1000px */}
+        <div className="grid grid-cols-3 gap-4 flex-1 min-h-0" style={{ maxHeight: '1000px' }}>
+          <div className="h-full overflow-hidden">
+            <TokenMonitor selectedProject={selectedProject} />
+          </div>
           <div className="h-full overflow-hidden">
             <SystemHealth />
           </div>
@@ -124,15 +126,6 @@ function DashboardContent() {
         OpenClaw Mission Control Dashboard v1.0 • Real-time Workspace Monitor
       </footer>
     </div>
-  );
-}
-
-// Main Dashboard Component with Provider
-export function Dashboard() {
-  return (
-    <QuickActionsProjectProvider>
-      <DashboardContent />
-    </QuickActionsProjectProvider>
   );
 }
 
@@ -158,7 +151,7 @@ function MobileDashboard({ currentTime, selectedProject, onProjectDeleted, refre
 
       {/* Row 1: Agents - Auto height to show all */}
       <div className="flex-shrink-0">
-        <AgentStatusEnhanced />
+        <AgentStatusHorizontal />
       </div>
 
       {/* Row 2: Tickets - Large window */}
@@ -176,8 +169,8 @@ function MobileDashboard({ currentTime, selectedProject, onProjectDeleted, refre
       </div>
 
       {/* Row 4: Quick Actions - Shows details for selected project */}
-      <div className="flex-shrink-0" style={{ height: '550px' }}>
-        <QuickActionsHooked 
+      <div className="flex-shrink-0" style={{ height: '350px' }}>
+        <QuickActions 
           selectedProject={localSelectedProject}
           onProjectDeleted={() => {
             setLocalSelectedProject(null);
@@ -186,8 +179,11 @@ function MobileDashboard({ currentTime, selectedProject, onProjectDeleted, refre
         />
       </div>
 
-      {/* Row 5: SystemHealth and LiveLog - Stacked */}
+      {/* Row 5: Tokens, Recent, Log - Stacked */}
       <div className="flex flex-col gap-2">
+        <div style={{ height: '200px' }}>
+          <TokenMonitor selectedProject={localSelectedProject} />
+        </div>
         <div style={{ height: '400px' }}>
           <SystemHealth />
         </div>
@@ -205,6 +201,42 @@ function MobileDashboard({ currentTime, selectedProject, onProjectDeleted, refre
 }
 
 // Horizontal Agent Status for Mobile - wraps to show all
+function AgentStatusHorizontal() {
+  const { agents, loading, error } = useAgentsHook();
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'working': return 'bg-status-working';
+      case 'error': return 'bg-status-error';
+      case 'idle': default: return 'bg-status-idle';
+    }
+  };
+
+  const formatAgentName = (name) => {
+    if (!name || typeof name !== 'string') return '?';
+    const match = name.match(/([^/\s]+)\.md/);
+    if (match) return match[1];
+    return name.replace(/^AGENTS\//, '').replace(/\.md$/, '').trim().substring(0, 8);
+  };
+
+  return (
+    <Panel title="Agents" loading={loading} error={error} className="h-full" flexContent>
+      <div className="flex flex-wrap gap-2 p-1">
+        {agents.map((agent) => (
+          <div 
+            key={agent.id}
+            className="flex items-center gap-1.5 px-2 py-1 rounded border border-mission-border/20 bg-mission-bg/30"
+          >
+            <div className={`w-2 h-2 rounded-full ${getStatusColor(agent.status)}`} />
+            <span className="text-xs text-mission-text">{formatAgentName(agent.name)}</span>
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+// Horizontal Scrolling Project Cards for Mobile
 function ProjectMonitorCards({ selectedProject, onSelectProject }) {
   const { projects, loading, error } = useProjectsHook();
   const [projectStatus, setProjectStatus] = useState({});
@@ -496,36 +528,84 @@ function useProjectsHook() {
 }
 
 // Hook for agents (reused)
-                className={`flex items-center gap-2 px-2 py-1.5 rounded border border-mission-border/20 hover:border-mission-border/40 transition-colors ${isPinned ? 'bg-mission-bg/20' : ''}`}
-              >
-                <div className="relative flex-shrink-0">
-                  <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)}`} />
-                  {agent.status === 'working' && (
-                    <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)} animate-ping opacity-75`} />
-                  )}
+function useAgentsHook() {
+  const [agents, setAgents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const response = await fetch('/api/agents');
+        if (!response.ok) throw new Error('Failed to fetch agents');
+        const data = await response.json();
+        setAgents(data);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAgents();
+    const interval = setInterval(fetchAgents, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return { agents, loading, error };
+}
+
+// Desktop Agent Status (narrow column)
+function AgentStatusNarrow() {
+  const { agents, loading, error } = useAgentsHook();
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'working': return 'bg-status-working';
+      case 'error': return 'bg-status-error';
+      case 'idle': default: return 'bg-status-idle';
+    }
+  };
+
+  const formatAgentName = (name) => {
+    if (!name || typeof name !== 'string') return 'Unknown';
+    const match = name.match(/([^/\s]+)\.md/);
+    if (match) return match[1];
+    return name.replace(/^AGENTS\//, '').replace(/\.md$/, '').trim();
+  };
+
+  const formatActivity = (agent) => {
+    if (!agent.currentTask) return 'idle';
+    return agent.project || 'active';
+  };
+
+  return (
+    <Panel title="Agents" loading={loading} error={error} className="h-full" flexContent>
+      <div className="flex flex-col h-full min-h-0">
+        {/* Agent List - scrollable, takes remaining space */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
+          {agents.map((agent) => (
+            <div 
+              key={agent.id}
+              className="flex items-center gap-2 px-2 py-1.5 rounded border border-mission-border/20 hover:border-mission-border/40 transition-colors"
+            >
+              <div className="relative flex-shrink-0">
+                <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)}`} />
+                {agent.status === 'working' && (
+                  <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${getStatusColor(agent.status)} animate-ping opacity-75`} />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-mission-text truncate">
+                  {formatAgentName(agent.name)}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-mission-text truncate flex items-center gap-1">
-                    {formatAgentName(agent.name)}
-                    {isPinned && (
-                      <svg 
-                        className="w-3 h-3 text-mission-muted opacity-60" 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth="2"
-                      >
-                        <path d="M12 2l-2 7h-5l4 3-2 7 5-4 5 4-2-7 4-3h-5l-2-7z" />
-                      </svg>
-                    )}
-                  </div>
-                  <div className="text-[10px] text-mission-muted truncate">
-                    {formatActivity(agent)}
-                  </div>
+                <div className="text-[10px] text-mission-muted truncate">
+                  {formatActivity(agent)}
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
     </Panel>
